@@ -1,0 +1,64 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户模型
+model User {
+  id        Int      @id @default(autoincrement()) // 主键，自增
+  username  String   @unique // 用户名，唯一
+  password  String // 加密后的密码
+  role      String   @default("elder") // 角色：elder（老人）或 child（子女），默认老人
+  createdAt DateTime @default(now()) @map("created_at") // 创建时间，默认当前时间
+  updatedAt DateTime @updatedAt @map("updated_at") // 更新时间，自动更新
+
+  // 关联关系：一个用户可以有多个提醒
+  reminders        Reminder[]
+  PushSubscription PushSubscription[]
+
+  @@map("users") // 指定数据库表名为 users
+}
+
+// 提醒模型
+model Reminder {
+  id          Int      @id @default(autoincrement())
+  title       String // 提醒标题
+  description String? // 提醒描述（可选）
+  remindAt    DateTime // 提醒时间
+  userId      Int // 外键，关联用户ID
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  taken    Boolean @default(false) // 是否已提醒/已吃
+  medicine String // 药品名
+  time     String // 提醒时间（HH:mm格式）
+
+  // 关联关系：提醒属于某个用户
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("reminders")
+}
+
+// 订阅模型
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    Int? // 可选关联用户
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@map("push_subscriptions")
+}
