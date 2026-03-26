@@ -1,8 +1,10 @@
+<!-- Reminder.vue -->
 <template>
   <div class="reminder-container">
     <h1 class="page-title">💊 吃药提醒</h1>
     <div v-if="reminders.length === 0" class="empty">今日暂无提醒</div>
     <ul class="reminder-list">
+    <!-- 显示今天的吃药细则 -->
       <li v-for="item in reminders" :key="item.id" class="reminder-item">
         <span class="time">{{ item.time }}</span>
         <span class="medicine">{{ item.medicine }}</span>
@@ -17,6 +19,7 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/api'
@@ -29,7 +32,7 @@ const pushSubscribed = ref(false)
 // 获取今日提醒
 const fetchReminders = async () => {
   try {
-    const res = await api.get('/reminders/today')
+    const res = await api.get('/reminders/today')   //去后端拿今天的吃药列表,显示在页面上
     reminders.value = res // 假设返回数组
   } catch (error) {
     console.error('获取提醒失败', error)
@@ -37,23 +40,19 @@ const fetchReminders = async () => {
 }
 
 // 开启推送
-// const enablePush = async () => {
-//   await subscribeUser()
-//   pushSubscribed.value = true
-// }
-
-// 开启推送（用户点击按钮时触发）
 const enablePush = async () => {
-  const success = await subscribeUser();
-  if (success) {
-    pushSubscribed.value = true;
-    // 将订阅状态存到 localStorage，避免每次刷新都弹授权
-    localStorage.setItem('pushEnabled', 'true');
-  }
-};
+  // console.log('按钮被点击11')
+  await subscribeUser()   // 1. 去注册推送权限
+  pushSubscribed.value = true  // 2. 标记：已开启推送
+  // console.log('按钮被点击22')
+}
+
+onMounted(() => {
+  fetchReminders()  // ① 先调用：获取今天的吃药提醒
+})
 
 
-</script>
+</script> 
 
 <style scoped>
 .reminder-container {

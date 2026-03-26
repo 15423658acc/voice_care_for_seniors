@@ -26,6 +26,7 @@ const getTodayReminders = async (req, res, next) => {
 // 定时任务：每分钟检查并发送提醒  （先改模型，后期修改永久提醒）
 const checkReminders = async () => {
     const now = new Date()
+    console.log('当前时间：', new Date())
     const currentTime = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`
 
     const reminders = await prisma.reminder.findMany({

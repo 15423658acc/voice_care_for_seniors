@@ -53,7 +53,7 @@ model Reminder {
 // 订阅模型
 model PushSubscription {
   id        Int      @id @default(autoincrement())
-  endpoint  String   @unique
+  endpoint  String   @unique @db.VarChar(500) // 添加 @db.Text 以支持长 URL
   p256dh    String
   auth      String
   userId    Int? // 可选关联用户
