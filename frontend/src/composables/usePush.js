@@ -10,26 +10,14 @@ export function usePush() {
   const publicVapidKey = 'BH9I5lMTktu-rJpnG-A9hBScqFLuhADH5qmGQ7vq2QKrpwxbEChRYhZw9MJxLYB2MuLHoPBSplGUWe-geIhJ9yE'
 
   async function subscribeUser() {
-    // console.log('【前端】开始订阅...')
     try {
       const registration = await navigator.serviceWorker.ready
-      // console.log('【前端】sw 已就绪', registration)
-      // console.log('【前端】pushManager 存在？', registration.pushManager);
-      
-      // 检查 pushManager 是否存在
-      // if (!registration.pushManager) {
-      //   console.error('【前端】pushManager 不存在！')
-      //   return
-      // }
       
       // 检查是否已有订阅
       let sub = await registration.pushManager.getSubscription()
-      console.log('【前端】已有订阅？', sub)
       if (!sub) {
         // 转换公钥为Uint8Array
-        console.log('开始转换公钥')
         const convertedKey = urlBase64ToUint8Array(publicVapidKey)
-        console.log('转换完成，开始 subscribe')
 
         sub = await registration.pushManager.subscribe({
           userVisibleOnly: true,
@@ -43,32 +31,15 @@ export function usePush() {
 
       subscription.value = sub
 
-        // 新增：检查 api 对象
-  // console.log('【前端】api 对象：', api)
-  // console.log('【前端】api.post 方法：', api.post)
-
       // 发送到后端保存
-      console.log('【前端】准备发送到后端...')
       
       await api.post('/push/subscribe', sub)
-      // const response = await fetch('http://localhost:3000/api/push/subscribe', {
-      // method: 'POST',
-      // headers: { 'Content-Type': 'application/json' },
-      // body: JSON.stringify(sub)
-      // })
-      // console.log('【前端】fetch 响应：', response)
-      // if (response.ok) {
-      //   const data = await response.json()
-      //   console.log('【前端】后端保存成功', data)
-      // } else {
-      //   console.error('【前端】后端返回错误', response.status)
-      // }
 
-      console.log('【前端】后端保存成功')
       isSubscribed.value = true
-
+      console.log('订阅成功，后端保存完成');
     } catch (err) {
       console.error('订阅推送失败', err)
+      throw err; // 重新抛出，让 enablePush 捕获
     }
   }
 

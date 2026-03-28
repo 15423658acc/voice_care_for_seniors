@@ -1,10 +1,15 @@
-<!-- Reminder.vue -->
 <template>
   <div class="reminder-container">
     <h1 class="page-title">💊 吃药提醒</h1>
+
+    <!-- 语音激活按钮（未激活时显示） -->
+    <button v-if="!speechEnabled" @click="enableSpeech" class="voice-activate-btn">
+      🔊 开启语音播报
+    </button>
+
+    <!-- 提醒列表 -->
     <div v-if="reminders.length === 0" class="empty">今日暂无提醒</div>
     <ul class="reminder-list">
-    <!-- 显示今天的吃药细则 -->
       <li v-for="item in reminders" :key="item.id" class="reminder-item">
         <span class="time">{{ item.time }}</span>
         <span class="medicine">{{ item.medicine }}</span>
@@ -13,46 +18,89 @@
         </span>
       </li>
     </ul>
+
+    <!-- 推送订阅按钮 -->
     <button v-if="!pushSubscribed" @click="enablePush" class="push-btn">
       开启推送提醒
     </button>
   </div>
 </template>
 
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import api from '@/api'
 import { usePush } from '@/composables/usePush'
 
 const reminders = ref([])
 const { isSubscribed, subscribeUser } = usePush()
 const pushSubscribed = ref(false)
+const speechEnabled = ref(false)   // 语音是否已激活
 
-// 获取今日提醒
+// ========== 数据获取 ==========
 const fetchReminders = async () => {
   try {
-    const res = await api.get('/reminders/today')   //去后端拿今天的吃药列表,显示在页面上
-    reminders.value = res // 假设返回数组
+    // 注意：这里路径改为 /reminders/today（假设 api 实例 baseURL 已包含 /api）
+    const res = await api.get('/reminders/today')
+    reminders.value = res
   } catch (error) {
     console.error('获取提醒失败', error)
   }
 }
 
-// 开启推送
+// ========== 推送订阅 ==========
 const enablePush = async () => {
-  // console.log('按钮被点击11')
-  await subscribeUser()   // 1. 去注册推送权限
-  pushSubscribed.value = true  // 2. 标记：已开启推送
-  // console.log('按钮被点击22')
+  await subscribeUser()
+  pushSubscribed.value = true
+  // 订阅成功后立即刷新列表
+  await fetchReminders()
 }
 
+// ========== 语音播报 ==========
+const speak = (text) => {
+  if (!speechEnabled.value) {
+    console.warn('语音未激活，无法播报')
+    return
+  }
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = 'zh-CN'
+    utterance.rate = 0.9
+    utterance.pitch = 1.0
+    utterance.volume = 1
+    window.speechSynthesis.speak(utterance)
+  } else {
+    console.warn('不支持语音合成')
+  }
+}
+
+// 激活语音权限（需要用户手势）
+const enableSpeech = () => {
+  // 播放一段空语音，激活浏览器权限
+  const utterance = new SpeechSynthesisUtterance(' ')
+  utterance.volume = 0
+  window.speechSynthesis.speak(utterance)
+  speechEnabled.value = true
+  console.log('语音权限已激活')
+}
+
+// ========== 处理推送消息 ==========
+const handleReminderArrived = (event) => {
+  const { body } = event.detail
+  speak(`提醒：${body}`)    // 播报语音
+  fetchReminders()          // 刷新列表
+}
+
+// ========== 生命周期 ==========
 onMounted(() => {
-  fetchReminders()  // ① 先调用：获取今天的吃药提醒
+  fetchReminders()
+  // 监听来自 main.js 的推送消息事件
+  window.addEventListener('reminder-arrived', handleReminderArrived)
 })
 
-
-</script> 
+onUnmounted(() => {
+  window.removeEventListener('reminder-arrived', handleReminderArrived)
+})
+</script>
 
 <style scoped>
 .reminder-container {
@@ -62,6 +110,19 @@ onMounted(() => {
   font-size: 2rem;
   text-align: center;
   margin-bottom: 2rem;
+}
+.voice-activate-btn {
+  background-color: #ff9800;
+  color: white;
+  font-size: 1.4rem;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 2rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 .reminder-list {
   list-style: none;
@@ -102,5 +163,11 @@ onMounted(() => {
   width: 100%;
   margin-top: 2rem;
   cursor: pointer;
+}
+.empty {
+  text-align: center;
+  font-size: 1.6rem;
+  color: #666;
+  padding: 2rem;
 }
 </style>

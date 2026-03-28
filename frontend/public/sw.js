@@ -5,6 +5,7 @@ self.addEventListener('push', event => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clients => {
+        console.log('找到的客户端数量:', clients.length);
         if (clients.length > 0) {
           // 有打开的页面，直接发送消息让页面播报
           clients.forEach(client => client.postMessage({

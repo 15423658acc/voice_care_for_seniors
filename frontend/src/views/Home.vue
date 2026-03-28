@@ -4,9 +4,10 @@
     <div class="grid">
       <router-link to="/emergency" class="card emergency">🚨 紧急呼叫</router-link>
       <router-link to="/reminder" class="card reminder">💊 吃药提醒</router-link>
-      <router-link to="/voice-assistant" class="card voice">🎤 语音助手</router-link>
-      <router-link to="/anti-fraud" class="card fraud">🛡️ 防诈骗</router-link>
+      <router-link to="/antifraud" class="card fraud">🛡️ 防诈骗</router-link>
       <router-link to="/weather" class="card weather">☀️ 天气</router-link>
+      <router-link to="/voiceAssistant" class="card voice">🎤 语音助手</router-link>
+      
     </div>
   </div>
 </template>

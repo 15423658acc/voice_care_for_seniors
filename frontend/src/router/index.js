@@ -29,6 +29,18 @@ const routes = [
     meta: { title: '提醒', requiresAuth: false }
   },
   {
+    path: '/voiceAssistant',
+    name: 'voiceAssistant',
+    component: () => import('../views/VoiceAssistant.vue'),
+    meta: { title: '语音助手', requiresAuth: false }
+  },
+    {
+    path: '/antifraud',
+    name: 'antifraud',
+    component: () => import('../views/AntiFraud.vue'),
+    meta: { title: '反诈骗', requiresAuth: false }
+  },
+  {
     path: '/profile',
     name: 'profile',
     component: () => import('../views/Profile.vue'),

@@ -26,15 +26,17 @@ const getTodayReminders = async (req, res, next) => {
 // 定时任务：每分钟检查并发送提醒  （先改模型，后期修改永久提醒）
 const checkReminders = async () => {
     const now = new Date()
-    console.log('当前时间：', new Date())
+    // console.log('当前时间：', new Date())
     const currentTime = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`
 
+    // console.log('当前时间:', currentTime);
     const reminders = await prisma.reminder.findMany({
         where: {
             time: currentTime,
             taken: false
         }
     })
+    // console.log('待提醒条目:', reminders);
 
     if (reminders.length === 0) return
 
@@ -49,6 +51,7 @@ const checkReminders = async () => {
 
         for (const sub of subscriptions) {
             try {
+                console.log('向订阅发送推送:', sub.endpoint);
                 await webpush.sendNotification({
                     endpoint: sub.endpoint,
                     keys: {
@@ -56,6 +59,7 @@ const checkReminders = async () => {
                         auth: sub.auth
                     }
                 }, payload)
+                console.log('推送发送成功');
             } catch (error) {
                 console.error('推送失败', error)
                 // 如果订阅过期，删除它

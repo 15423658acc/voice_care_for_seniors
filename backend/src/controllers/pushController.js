@@ -21,7 +21,7 @@ const subscribe = async (req, res, next) => {
             },
         });
 
-        console.log('【后端】订阅保存成功', result);
+        // console.log('【后端】订阅保存成功', result);
 
         res.json({ code: 200, msg: '订阅成功' })
         // await fetchReminders()

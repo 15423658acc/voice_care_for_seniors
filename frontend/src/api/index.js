@@ -67,9 +67,12 @@ service.interceptors.response.use(
 
 // 封装常用的请求方法
 export default {
-  get(url, params, config) {
-    return service.get(url, { params, ...config })
-  },
+  // get(url, params, config) {
+  //   return service.get(url, { params, ...config })
+  // },
+  get(url, config = {}) {
+    return service.get(url, config)
+},
   post(url, data, config) {
     return service.post(url, data, config)
   },

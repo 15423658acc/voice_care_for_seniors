@@ -2,7 +2,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router' // 引入路由
-// import './utils/rem'
 
 const app = createApp(App)
 app.use(router) // 使用路由插件
@@ -21,12 +20,14 @@ navigator.serviceWorker.addEventListener('message', event => {
   if (event.data.type === 'REMINDER') {
     const { title, body } = event.data.payload
     // 使用语音播报
-    speak(`提醒：${body}`)
-  }
+window.dispatchEvent(new CustomEvent('reminder-arrived', { detail: { body } }))
+
+}
 })
 
 // 语音播报函数
 function speak(text) {
+  console.log('尝试播报:', text);
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = 'zh-CN'
@@ -34,6 +35,8 @@ function speak(text) {
     utterance.pitch = 1.0
     utterance.volume = 1
     window.speechSynthesis.speak(utterance)
+  }else {
+    console.warn('不支持语音合成');
   }
 }
 
