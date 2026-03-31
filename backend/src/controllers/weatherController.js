@@ -1,76 +1,96 @@
-
-
-
-
-
-
-
 const axios = require('axios');
 const dotenv = require('dotenv');
 dotenv.config();
+// console.log('HEFENG_HOST 实际值：', process.env.HEFENG_HOST);
+// console.log('HEFENG_API_KEY 实际值：', process.env.HEFENG_API_KEY);
 
-const HEFENG_API_KEY = process.env.HEFENG_API_KEY;
+
+// 和风天气配置（请从环境变量读取）
+const HEFENG_API_KEY = process.env.HEFENG_API_KEY;      // 你的 API Key
+const HEFENG_HOST = process.env.HEFENG_HOST    // 你的专属 Host，请务必在 .env 中配置
 
 /**
  * 获取实时天气（和风天气 V7）
- * GET /api/weather/current?city=城市名
+ * GET /api/weather/current?city=城市名（支持中英文）
  */
 const getCurrentWeather = async (req, res, next) => {
     try {
         const { city } = req.query;
-        console.log('[天气] 收到请求，城市：', city);
+        // console.log('[天气] 收到请求，城市：', city);
 
         if (!city) {
             return res.status(400).json({ code: 400, msg: '请提供城市名' });
         }
 
-        // 和风天气实时天气接口
-        const url = 'https://devapi.qweather.com/v7/weather/now';
-        const params = {
-            location: city,   // 直接用中文城市名，和风支持（如“北京”）
+        // ---------- 步骤1：通过城市名获取 location_id ----------
+        const searchUrl = `${HEFENG_HOST}/geo/v2/city/lookup`;
+        const searchParams = {
+            location: city,      // 支持中文或英文
             key: HEFENG_API_KEY
         };
+        console.log('[天气] 搜索城市，URL:', searchUrl, '参数:', searchParams);
 
-        console.log('[天气] 请求和风天气，城市：', city);
-        const response = await axios.get(url, { params, timeout: 5000 });
+        const searchResp = await axios.get(searchUrl, { params: searchParams, timeout: 5000 });
 
-        // 和风返回 code 为 '200' 表示成功
-        if (response.data.code !== '200') {
-            console.error('[天气] 和风返回错误码：', response.data.code);
-            return res.status(404).json({ code: 404, msg: '城市不存在或API错误' });
+        // 检查搜索响应
+        if (searchResp.data.code !== '200') {
+            console.error('[天气] 城市搜索失败，响应码：', searchResp.data.code);
+            return res.status(404).json({ code: 404, msg: '城市不存在，请检查输入' });
         }
 
-        const now = response.data.now;
+        const locations = searchResp.data.location;
+        if (!locations || locations.length === 0) {
+            console.error('[天气] 未找到匹配的城市');
+            return res.status(404).json({ code: 404, msg: '城市不存在，请检查输入' });
+        }
+
+        // 取第一个匹配结果（最相关）
+        const locationId = locations[0].id;
+        const cityName = locations[0].name;      // 使用 API 返回的标准城市名
+        console.log('[天气] 匹配到城市：', cityName, 'ID:', locationId);
+
+        // ---------- 步骤2：获取实时天气 ----------
+        const weatherUrl = `${HEFENG_HOST}/v7/weather/now`;
+        const weatherParams = {
+            location: locationId,
+            key: HEFENG_API_KEY
+        };
+        console.log('[天气] 请求实时天气，URL:', weatherUrl, '参数:', weatherParams);
+
+        const weatherResp = await axios.get(weatherUrl, { params: weatherParams, timeout: 5000 });
+
+        if (weatherResp.data.code !== '200') {
+            console.error('[天气] 天气数据获取失败，响应码：', weatherResp.data.code);
+            return res.status(500).json({ code: 500, msg: '天气数据获取失败，请稍后重试' });
+        }
+
+        const now = weatherResp.data.now;
         const weatherInfo = {
-            city: city,                       // 使用输入的城市名
-            temperature: now.temp,            // 温度（摄氏度）
-            description: now.text,            // 天气描述（如“晴”）
-            humidity: now.humidity            // 湿度百分比
+            city: cityName,                     // 使用 API 返回的标准城市名
+            temperature: now.temp,              // 温度（摄氏度）
+            description: now.text,              // 天气描述（如“晴”）
+            humidity: now.humidity              // 湿度百分比
         };
 
-        console.log('[天气] 获取成功，数据：', weatherInfo);
+        // console.log('[天气] 获取成功：', weatherInfo);
         res.json({ code: 200, data: weatherInfo });
     } catch (error) {
         console.error('[天气] 请求失败：', error.message);
+        // 详细打印错误响应（如果有）
         if (error.response) {
-            // 服务器返回了错误状态码
-            const status = error.response.status;
-            if (status === 404) {
-                return res.status(404).json({ code: 404, msg: '城市不存在' });
-            } else if (status === 401) {
-                return res.status(500).json({ code: 500, msg: '和风天气授权失败，请检查API Key' });
-            } else {
-                return res.status(500).json({ code: 500, msg: '天气服务异常' });
-            }
-        } else if (error.request) {
-            // 请求发出但未收到响应（网络问题）
-            return res.status(503).json({ code: 503, msg: '天气服务暂时不可用，请稍后重试' });
-        } else {
-            // 其他错误
-            return res.status(500).json({ code: 500, msg: '服务器内部错误' });
+            console.error('[天气] 错误响应数据：', error.response.data);
+            console.error('[天气] 错误状态码：', error.response.status);
         }
+        // 返回友好提示
+        res.status(500).json({ code: 500, msg: '天气服务暂时不可用，请稍后重试' });
     }
 };
+
+
+
+
+
+
 
 module.exports = {
     getCurrentWeather

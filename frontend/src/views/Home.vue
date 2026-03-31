@@ -7,6 +7,7 @@
       <router-link to="/antifraud" class="card fraud">🛡️ 防诈骗</router-link>
       <router-link to="/weather" class="card weather">☀️ 天气</router-link>
       <router-link to="/voiceAssistant" class="card voice">🎤 语音助手</router-link>
+      <router-link to="/healthRecords" class="card health">Health Records</router-link>
       
     </div>
   </div>

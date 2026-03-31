@@ -56,6 +56,7 @@ const login = async (req, res, next) => {
 const register = async (req, res, next) => {
     try {
         const { username, password, role = 'child' } = req.body // 默认角色为子女
+        console.log(req.body)
 
         // 简单验证
         if (!username || !password) {

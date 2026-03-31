@@ -26,6 +26,9 @@ model User {
   // 关联关系：一个用户可以有多个提醒
   reminders        Reminder[]
   PushSubscription PushSubscription[]
+  HealthRecord     HealthRecord[]
+  EmergencyContact EmergencyContact[]
+  EmergencyLog     EmergencyLog[]
 
   @@map("users") // 指定数据库表名为 users
 }
@@ -50,7 +53,7 @@ model Reminder {
   @@map("reminders")
 }
 
-// 订阅模型
+// 订阅存储模型
 model PushSubscription {
   id        Int      @id @default(autoincrement())
   endpoint  String   @unique @db.VarChar(500) // 添加 @db.Text 以支持长 URL
@@ -61,4 +64,49 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@map("push_subscriptions")
+}
+
+// 健康记录表
+model HealthRecord {
+  id         Int      @id @default(autoincrement())
+  title      String // 记录标题，如“降压药服用记录”
+  content    String? // 详细内容（支持多行文本）
+  recordType String // 类型：medicine（药品）或 checkup（体检）
+  recordDate DateTime // 记录日期，默认为当前时间
+  userId     Int // 所属老人用户ID
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("health_records")
+}
+
+// 紧急联系人
+model EmergencyContact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String
+  email     String?
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("emergency_contacts")
+}
+
+// 求助记录
+model EmergencyLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  latitude  Float?
+  longitude Float?
+  location  String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("emergency_logs")
 }

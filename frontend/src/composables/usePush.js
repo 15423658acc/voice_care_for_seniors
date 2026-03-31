@@ -7,7 +7,7 @@ export function usePush() {
   const subscription = ref(null)
 
   // 将公钥从后端获取
-  const publicVapidKey = 'BH9I5lMTktu-rJpnG-A9hBScqFLuhADH5qmGQ7vq2QKrpwxbEChRYhZw9MJxLYB2MuLHoPBSplGUWe-geIhJ9yE'
+  const publicVapidKey = 'BEENlvIXIWbCBpd_dkJGAm39PnIgGlmJgU6p6ihUELqzQY9W_X45IRdRHuGvbWAuiuMiIjs1RCbOCYSEuCnP5_o'
 
   async function subscribeUser() {
     try {
