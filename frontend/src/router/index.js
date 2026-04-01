@@ -66,6 +66,12 @@ const routes = [
         meta: { title: '登录', requiresAuth: false } // 登录页本身不需要登录
       },
       {
+        path: 'register', // 注意这里没有斜杠，是相对路径，实际路径为 /admin/register
+        name: 'admin-register',
+        component: () => import('../views/admin/Register.vue'),
+        meta: { title: '注册', requiresAuth: false } // 登录页本身不需要登录
+      },
+      {
         path: 'dashboard',
         name: 'admin-dashboard',
         component: () => import('../views/admin/Dashboard.vue'),

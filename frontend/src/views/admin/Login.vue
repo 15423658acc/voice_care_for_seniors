@@ -26,6 +26,9 @@
         {{ loading ? '登录中...' : '登录' }}
       </button>
       <p v-if="error" class="error">{{ error }}</p>
+      <p class="register-link">
+          还没有账号？<router-link to="/admin/register">立即注册</router-link>
+      </p>
     </form>
   </div>
 </template>
@@ -112,5 +115,14 @@ input {
   color: red;
   margin-top: 1rem;
   text-align: center;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 1rem;
+}
+.register-link a {
+  color: #2196f3;
+  text-decoration: none;
 }
 </style>

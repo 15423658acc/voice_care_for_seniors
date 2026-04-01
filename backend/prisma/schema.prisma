@@ -19,7 +19,8 @@ model User {
   id        Int      @id @default(autoincrement()) // 主键，自增
   username  String   @unique // 用户名，唯一
   password  String // 加密后的密码
-  role      String   @default("elder") // 角色：elder（老人）或 child（子女），默认老人
+  email     String?  @unique // 新增邮箱字段，可选且唯一（可选
+  role      String   @default("child") // 角色：elder（老人）或 child（子女），默认老人
   createdAt DateTime @default(now()) @map("created_at") // 创建时间，默认当前时间
   updatedAt DateTime @updatedAt @map("updated_at") // 更新时间，自动更新
 

@@ -30,7 +30,7 @@
       <p class="city">{{ weather.city }}</p>
       <p class="temp">{{ weather.temperature }}°C</p>
       <p class="desc">{{ weather.description }}</p>
-      <p class="humidity">湿度：{{ weather.humidity }}%</p>
+      <p class="humidity">相对湿度：{{ weather.humidity }}%</p>
     </div>
 
     <!-- 语音播报按钮，仅在天气存在时启用 -->

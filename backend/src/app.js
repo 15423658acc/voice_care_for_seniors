@@ -7,6 +7,8 @@ const { errorHandler } = require('./middleware/errorHandler') // 自定义错误
 
 const app = express()
 
+
+// 1. 安全与解析类中间件（最前面）
 // 使用 helmet 设置各种 HTTP 头，增强安全性（例如防止 XSS 攻击）
 app.use(helmet())
 
@@ -23,6 +25,9 @@ app.use(express.json())
 // 解析 URL-encoded 请求体（一般用于表单提交）
 app.use(express.urlencoded({ extended: true }))
 
+
+
+// 2.路由
 // 挂载路由
 app.use('/api', routes) // 所有 API 接口都加上 /api 前缀
 
@@ -37,11 +42,18 @@ app.get('/health', (req, res) => {
 //     res.status(500).json({ code: 500, msg: '服务器内部错误' });
 // });
 
+
+
+// 3. 404中间件
 // 404 处理：如果所有路由都不匹配，返回 404
 app.use((req, res, next) => {
     res.status(404).json({ code: 404, msg: '接口不存在' })
 })
 
+
+
+
+// 4. 全局错误处理（必须最后）
 // 全局错误处理中间件：捕获所有同步和异步错误
 app.use(errorHandler)
 

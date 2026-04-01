@@ -6,7 +6,7 @@ const authController = require('../controllers/authController')
 // 登录接口
 router.post('/login', authController.login)
 
-// 注册接口（可选，如果子女需要注册）
+// 注册接口
 router.post('/register', authController.register)
 
 // 获取当前用户信息（需要认证）

@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken')
 
 // 从环境变量读取 JWT 密钥和过期时间，如果没有则使用默认值
 // const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key' // 建议在生产环境中设置复杂的密钥
-const JWT_SECRET = process.env.JWT_SECRET || 'BEENlvIXIWbCBpd_dkJGAm39PnIgGlmJgU6p6ihUELqzQY9W_X45IRdRHuGvbWAuiuMiIjs1RCbOCYSEuCnP5_o' // 建议在生产环境中设置复杂的密钥
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d' // token 过期时间，7天
+const JWT_SECRET = process.env.JWT_SECRET  // 建议在生产环境中设置复杂的密钥
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'; // token 过期时间，7天
 
 if (!JWT_SECRET) {
     throw new Error('请配置 JWT_SECRET 环境变量')

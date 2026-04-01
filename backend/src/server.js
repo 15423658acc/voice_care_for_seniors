@@ -1,4 +1,4 @@
-// src/server.js  项目 “总开关”
+// src/server.js  项目 “总开关”，只启动服务器
 const app = require('./app')
 const dotenv = require('dotenv')
 

@@ -11,6 +11,7 @@
     <router-link to="/voiceAssistant">VoiceAssistant</router-link>
     <router-link to="/antifraud">antifraud</router-link>
     <router-link to="/healthRecords">healthRecords</router-link>
+    
 
     <router-view/>
 
