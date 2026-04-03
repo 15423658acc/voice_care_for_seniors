@@ -53,24 +53,6 @@ const sendEmergencyMail = async (req, res, next) => {
         }
 
 
-
-      //   const mailOptions = {
-      //       from: `"老友助手" <${process.env.SMTP_USER}>`,
-      //       to: toEmails,
-      //       subject: '🚨 老人紧急呼叫！请立即联系',
-      //       html: `
-      //   <h1>老人触发紧急呼叫</h1>
-      //   <p>时间：${new Date().toLocaleString()}</p>
-      //   <p>定位信息：</p>
-      //   <ul>
-      //     <li>纬度：${location.latitude}</li>
-      //     <li>经度：${location.longitude}</li>
-      //   </ul>
-      //   <p>查看地图：<a href="${mapLink}">点击查看老人位置</a></p>
-      //   <p>请尽快确认老人安全！</p>
-      // `
-      //   }
-
         // 发送邮件
         await transporter.sendMail(mailOptions)
 

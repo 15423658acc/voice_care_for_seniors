@@ -1,15 +1,16 @@
 <template>
-  <div class="health-records">
-    <h1 class="page-title">📋 健康记录</h1>
+  <div class="health-records-admin">
+    <h1>健康记录管理</h1>
     <div class="actions">
-      <button class="add-btn" @click="openAddModal">➕ 新增记录</button>
+      <button @click="openAddModal">添加记录</button>
+      <select v-model="selectedUserId" @change="fetchRecords">
+        <option v-for="elder in elders" :key="elder.id" :value="elder.id">{{ elder.username }}</option>
+      </select>
     </div>
 
-    <!-- 加载中 -->
+    <!-- 记录列表（复用老人端的卡片样式） -->
     <div v-if="loading" class="loading">加载中...</div>
-    <!-- 空状态 -->
-    <div v-else-if="records.length === 0" class="empty">暂无记录，点击上方按钮添加</div>
-    <!-- 记录列表 -->
+    <div v-else-if="records.length === 0" class="empty">暂无记录</div>
     <div v-else class="record-list">
       <div v-for="item in records" :key="item.id" class="record-card" @click="viewDetail(item)">
         <h3 class="record-title">{{ item.title }}</h3>
@@ -21,10 +22,10 @@
       </div>
     </div>
 
-    <!-- 新增/编辑模态框 -->
+    <!-- 新增/编辑模态框（同老人端） -->
     <div v-if="showModal" class="modal" @click.self="closeModal">
       <div class="modal-content">
-        <h2>{{ isEdit ? '编辑记录' : '新增记录' }}</h2>
+        <h2>{{ isEdit ? '编辑记录' : '添加记录' }}</h2>
         <form @submit.prevent="submitRecord">
           <div class="form-group">
             <label>标题 *</label>
@@ -76,14 +77,14 @@ import { ref, onMounted } from 'vue'
 import api from '@/api'
 
 const records = ref([])
+const elders = ref([])
+const selectedUserId = ref(null)
 const loading = ref(false)
 const showModal = ref(false)
 const showDetail = ref(false)
 const isEdit = ref(false)
 const submitting = ref(false)
 const currentRecord = ref({})
-
-// 表单数据
 const form = ref({
   id: null,
   title: '',
@@ -92,37 +93,35 @@ const form = ref({
   content: ''
 })
 
-// 获取记录列表
+// 获取所有老人
+const fetchElders = async () => {
+  try {
+    const res = await api.get('/users?role=elder')
+    elders.value = res
+
+    // 添加内容：默认选中第一个老人后获取记录
+    if (elders.value.length) {
+      selectedUserId.value = elders.value[0].id
+      await fetchRecords()   // 添加这一行
+    }
+  } catch (error) {
+    console.error('获取老人列表失败', error)
+  }
+}
+
+// 获取健康记录
 const fetchRecords = async () => {
+  if (!selectedUserId.value) return
   loading.value = true
   try {
-    const res = await api.get('/health')
+    const res = await api.get('/health', { params: { userId: selectedUserId.value } })
     records.value = res
+
   } catch (error) {
     console.error('获取记录失败', error)
   } finally {
     loading.value = false
   }
-}
-
-// 查看详情
-const viewDetail = (record) => {
-  currentRecord.value = { ...record }
-  showDetail.value = true
-}
-
-// 编辑记录（从详情打开）
-const editRecord = (record) => {
-  showDetail.value = false
-  form.value = {
-    id: record.id,
-    title: record.title,
-    recordType: record.recordType,
-    recordDate: record.recordDate ? record.recordDate.split('T')[0] : '',
-    content: record.content || ''
-  }
-  isEdit.value = true
-  showModal.value = true
 }
 
 // 打开新增模态框
@@ -138,7 +137,21 @@ const openAddModal = () => {
   showModal.value = true
 }
 
-// 提交表单（新增或编辑）
+// 编辑记录
+const editRecord = (record) => {
+  showDetail.value = false
+  form.value = {
+    id: record.id,
+    title: record.title,
+    recordType: record.recordType,
+    recordDate: record.recordDate ? record.recordDate.split('T')[0] : '',
+    content: record.content || ''
+  }
+  isEdit.value = true
+  showModal.value = true
+}
+
+// 提交
 const submitRecord = async () => {
   submitting.value = true
   try {
@@ -154,7 +167,8 @@ const submitRecord = async () => {
         title: form.value.title,
         recordType: form.value.recordType,
         recordDate: form.value.recordDate,
-        content: form.value.content
+        content: form.value.content,
+        userId: selectedUserId.value
       })
     }
     await fetchRecords()
@@ -166,9 +180,9 @@ const submitRecord = async () => {
   }
 }
 
-// 删除记录
+// 删除
 const deleteRecord = async (id) => {
-  if (!confirm('确定要删除这条记录吗？')) return
+  if (!confirm('确定删除吗？')) return
   try {
     await api.delete(`/health/${id}`)
     await fetchRecords()
@@ -178,12 +192,15 @@ const deleteRecord = async (id) => {
   }
 }
 
-// 关闭模态框
+const viewDetail = (record) => {
+  currentRecord.value = { ...record }
+  showDetail.value = true
+}
+
 const closeModal = () => {
   showModal.value = false
 }
 
-// 格式化日期
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -191,154 +208,10 @@ const formatDate = (dateStr) => {
 }
 
 onMounted(() => {
-  fetchRecords()
+  fetchElders()
 })
 </script>
 
 <style scoped>
-/* 适老化大字体、大间距 */
-.health-records {
-  padding: 1rem;
-  max-width: 600px;
-  margin: 0 auto;
-}
-.page-title {
-  font-size: 2rem;
-  text-align: center;
-  margin-bottom: 1rem;
-}
-.actions {
-  text-align: right;
-  margin-bottom: 1rem;
-}
-.add-btn {
-  background-color: #4caf50;
-  color: white;
-  font-size: 1.4rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-.record-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.record-card {
-  background-color: #f9f9f9;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.record-card:hover {
-  background-color: #e0e0e0;
-}
-.record-title {
-  font-size: 1.6rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-.record-date {
-  font-size: 1.2rem;
-  color: #666;
-  margin-bottom: 0.5rem;
-}
-.record-type {
-  display: inline-block;
-  font-size: 1.2rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 0.3rem;
-  background-color: #ddd;
-}
-.record-type.medicine {
-  background-color: #ffebee;
-  color: #c62828;
-}
-.record-type.checkup {
-  background-color: #e0f2fe;
-  color: #0277bd;
-}
-.record-content {
-  font-size: 1.4rem;
-  margin-top: 0.5rem;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.modal-content {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 1rem;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80%;
-  overflow-y: auto;
-}
-.form-group {
-  margin-bottom: 1rem;
-}
-.form-group label {
-  display: block;
-  font-size: 1.4rem;
-  margin-bottom: 0.3rem;
-}
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 1.4rem;
-  border: 1px solid #ccc;
-  border-radius: 0.3rem;
-}
-.form-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1rem;
-}
-.form-buttons button {
-  padding: 0.5rem 1rem;
-  font-size: 1.4rem;
-  border: none;
-  border-radius: 0.3rem;
-  cursor: pointer;
-}
-.form-buttons button[type="submit"] {
-  background-color: #4caf50;
-  color: white;
-}
-.form-buttons button[type="button"] {
-  background-color: #f44336;
-  color: white;
-}
-.loading, .empty {
-  text-align: center;
-  font-size: 1.4rem;
-  color: #666;
-  margin-top: 2rem;
-}
-.detail-content {
-  white-space: pre-wrap;
-  font-size: 1.4rem;
-  margin-top: 0.5rem;
-  background: #f5f5f5;
-  padding: 0.5rem;
-  border-radius: 0.3rem;
-}
+/* 样式可复用老人端健康记录的样式 */
 </style>

@@ -1,14 +1,14 @@
 <template>
   <div class="admin-layout">
     <aside class="sidebar">
-      <h2 class="sidebar-title">老友助手管理</h2>
-      <nav class="nav">
-        <router-link to="/admin/dashboard" class="nav-item" active-class="active">仪表盘</router-link>
-        <router-link to="/admin/emergency-contacts" class="nav-item" active-class="active">紧急联系人</router-link>
-        <router-link to="/admin/reminders" class="nav-item" active-class="active">吃药提醒</router-link>
-        <router-link to="/admin/emergency-logs" class="nav-item" active-class="active">求助记录</router-link>
+      <h2>子女后台</h2>
+      <nav>
+        <router-link to="/admin/contacts">紧急联系人</router-link>
+        <router-link to="/admin/reminders">吃药提醒</router-link>
+        <router-link to="/admin/emergency-logs">求助记录</router-link>
+        <router-link to="/admin/health">健康记录</router-link>
+        <button @click="logout" class="logout-btn">退出登录</button>
       </nav>
-      <button @click="logout" class="logout-btn">退出登录</button>
     </aside>
     <main class="content">
       <router-view />
@@ -20,10 +20,8 @@
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-
 const logout = () => {
   localStorage.removeItem('token')
-  localStorage.removeItem('user')
   router.push('/admin/login')
 }
 </script>
@@ -31,51 +29,45 @@ const logout = () => {
 <style scoped>
 .admin-layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
 }
 .sidebar {
   width: 250px;
-  background-color: #82909f;
+  background-color: #2c3e50;
   color: white;
+  padding: 1rem;
+}
+.sidebar h2 {
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.sidebar nav {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  gap: 0.5rem;
 }
-.sidebar-title {
-  font-size: 1.8rem;
-  text-align: center;
-  margin-bottom: 2rem;
-}
-.nav {
-  flex: 1;
-}
-.nav-item {
-  display: block;
-  padding: 1rem;
-  color: #ecf0f1;
+.sidebar a {
+  color: white;
   text-decoration: none;
-  font-size: 1.6rem;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
 }
-.nav-item:hover,
-.active {
-  background-color: #34495e;
+.sidebar a.router-link-active {
+  background-color: #1abc9c;
 }
 .logout-btn {
   background-color: #e74c3c;
   color: white;
   border: none;
-  padding: 1rem;
-  font-size: 1.6rem;
-  border-radius: 4px;
+  padding: 0.5rem;
   cursor: pointer;
   margin-top: 1rem;
+  border-radius: 0.25rem;
 }
 .content {
   flex: 1;
-  padding: 2rem;
-  background-color: #f5f5f5;
-  overflow-y: auto;
+  padding: 1rem;
+  background-color: #ecf0f1;
 }
 </style>

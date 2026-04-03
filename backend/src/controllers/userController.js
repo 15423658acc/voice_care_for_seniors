@@ -1,3 +1,9 @@
+const express = require('express')
+const router = express.Router()
+const authController = require('../controllers/authController')
+const { PrismaClient } = require('@prisma/client')
+const prisma = new PrismaClient()
+
 const getUsersByRole = async (req, res, next) => {
     try {
         const { role } = req.query
@@ -13,4 +19,8 @@ const getUsersByRole = async (req, res, next) => {
     } catch (error) {
         next(error)
     }
+}
+
+module.exports = {
+    getUsersByRole
 }

@@ -36,7 +36,6 @@ const checkReminders = async () => {
             taken: false
         }
     })
-    // console.log('待提醒条目:', reminders);
 
     if (reminders.length === 0) return
 
@@ -69,7 +68,7 @@ const checkReminders = async () => {
             }
         }
 
-        // 标记为已提醒（可选）
+        // 标记为已提醒
         await prisma.reminder.update({
             where: { id: reminder.id },
             data: { taken: true }
@@ -77,7 +76,153 @@ const checkReminders = async () => {
     }
 }
 
+// ===================++++++++++++++===========================
+// ================= 新增：增删改查  =============================
+
+// 获取提醒列表
+const getReminders = async (req, res, next) => {
+    try {
+        let userId = req.user.id
+        if (req.user.role === 'child' && req.query.userId) {
+            userId = parseInt(req.query.userId)
+        }
+        const reminders = await prisma.reminder.findMany({
+            where: { userId },
+            orderBy: { remindAt: 'asc' }
+        })
+        res.json({ code: 200, data: reminders })
+    } catch (error) {
+        next(error)
+    }
+}
+
+// 获取单个提醒
+const getReminderById = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const reminder = await prisma.reminder.findUnique({
+            where: { id: parseInt(id) }
+        })
+        if (!reminder) return res.status(404).json({ code: 404, msg: '提醒不存在' })
+        if (req.user.role !== 'child' && reminder.userId !== req.user.id) {
+            return res.status(403).json({ code: 403, msg: '无权访问' })
+        }
+        res.json({ code: 200, data: reminder })
+    } catch (error) {
+        next(error)
+    }
+}
+
+// 创建提醒
+const createReminder = async (req, res, next) => {
+    try {
+        const { title, description, remindAt, medicine, userId } = req.body
+        let targetUserId = req.user.id
+        if (req.user.role === 'child' && userId) {
+            targetUserId = parseInt(userId)
+        }
+        if (!title || !remindAt) {
+            return res.status(400).json({ code: 400, msg: '标题和提醒时间不能为空' })
+        }
+        const newReminder = await prisma.reminder.create({
+            data: {
+                title,
+                description: description || '',
+                remindAt: new Date(remindAt),
+                medicine: medicine || '',
+                userId: targetUserId,
+                taken: false,
+                time: new Date(remindAt).toLocaleTimeString()  // 或者从请求中单独获取
+            }
+        })
+        res.status(201).json({ code: 200, data: newReminder })
+    } catch (error) {
+        next(error)
+    }
+}
+
+// 更新提醒
+const updateReminder = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const { title, description, remindAt, medicine, taken } = req.body
+        const reminder = await prisma.reminder.findUnique({
+            where: { id: parseInt(id) }
+        })
+        if (!reminder) return res.status(404).json({ code: 404, msg: '提醒不存在' })
+        if (req.user.role !== 'child' && reminder.userId !== req.user.id) {
+            return res.status(403).json({ code: 403, msg: '无权操作' })
+        }
+        const updated = await prisma.reminder.update({
+            where: { id: parseInt(id) },
+            data: {
+                title: title || reminder.title,
+                description: description !== undefined ? description : reminder.description,
+                remindAt: remindAt ? new Date(remindAt) : reminder.remindAt,
+                medicine: medicine !== undefined ? medicine : reminder.medicine,
+                taken: taken !== undefined ? taken : reminder.taken
+            }
+        })
+        res.json({ code: 200, data: updated })
+    } catch (error) {
+        next(error)
+    }
+}
+
+// 删除提醒
+const deleteReminder = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const reminder = await prisma.reminder.findUnique({
+            where: { id: parseInt(id) }
+        })
+        if (!reminder) return res.status(404).json({ code: 404, msg: '提醒不存在' })
+        if (req.user.role !== 'child' && reminder.userId !== req.user.id) {
+            return res.status(403).json({ code: 403, msg: '无权操作' })
+        }
+        await prisma.reminder.delete({ where: { id: parseInt(id) } })
+        res.json({ code: 200, msg: '删除成功' })
+    } catch (error) {
+        next(error)
+    }
+}
+
+// 标记已吃（老人端用）
+const markTaken = async (req, res, next) => {
+    try {
+        const { id } = req.params
+        const reminder = await prisma.reminder.findUnique({
+            where: { id: parseInt(id) }
+        })
+        if (!reminder) return res.status(404).json({ code: 404, msg: '提醒不存在' })
+        if (reminder.userId !== req.user.id) {
+            return res.status(403).json({ code: 403, msg: '无权操作' })
+        }
+        const updated = await prisma.reminder.update({
+            where: { id: parseInt(id) },
+            data: { taken: true }
+        })
+        res.json({ code: 200, data: updated })
+    } catch (error) {
+        next(error)
+    }
+}
+
+
+
+
+// module.exports = {
+//     getTodayReminders,
+//     checkReminders
+// }
+
 module.exports = {
     getTodayReminders,
-    checkReminders
+    checkReminders,
+    getReminders,
+    getReminderById,
+    createReminder,
+    updateReminder,
+    deleteReminder,
+    markTaken
 }

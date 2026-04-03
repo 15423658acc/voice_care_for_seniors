@@ -72,17 +72,29 @@ const routes = [
         meta: { title: '注册', requiresAuth: false } // 登录页本身不需要登录
       },
       {
-        path: 'dashboard',
-        name: 'admin-dashboard',
-        component: () => import('../views/admin/Dashboard.vue'),
-        meta: { title: '仪表盘', requiresAuth: true }
-      },
-      {
         path: 'reminders',
         name: 'admin-reminders',
         component: () => import('../views/admin/Reminders.vue'),
         meta: { title: '提醒管理', requiresAuth: true }
-      }
+      },
+      {
+        path: 'contacts',
+        name: 'admin-contacts',
+        component: () => import('../views/admin/Contacts.vue'),
+        meta: { title: '联系人管理', requiresAuth: true }
+      },
+      {
+        path: 'emergency-logs',
+        name: 'admin-emergencylogs',
+        component: () => import('../views/admin/EmergencyLogs.vue'),
+        meta: { title: '紧急呼叫记录', requiresAuth: true }
+      },
+            {
+        path: 'health',
+        name: 'admin-healthlogs',
+        component: () => import('../views/admin/HealthRecord.vue'),
+        meta: { title: '健康记录', requiresAuth: true }
+      },
     ]
   },
   // 404 页面

@@ -119,7 +119,12 @@ const handleRegister = async () => {
     });
 
     // 假设返回格式 { code:200, data: { token, user } }
-    const { token, user } = res.data;
+    // const { token, user } = res.data;
+    const { token, user } = res;
+    
+    
+    
+    
     // 3. 存储 token 和用户信息
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
