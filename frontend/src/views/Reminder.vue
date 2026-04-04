@@ -11,7 +11,8 @@
     <div v-if="reminders.length === 0" class="empty">今日暂无提醒</div>
     <ul class="reminder-list">
       <li v-for="item in reminders" :key="item.id" class="reminder-item">
-        <span class="time">{{ item.time }}</span>
+        <!-- <span class="time">{{ item.time }}</span> -->
+         <span class="time">{{ formatTime(item) }}</span>
         <span class="medicine">{{ item.medicine }}</span>
         <span class="status" :class="{ taken: item.taken }">
           {{ item.taken ? '已吃' : '待提醒' }}
@@ -35,6 +36,30 @@ const reminders = ref([])
 const { isSubscribed, subscribeUser } = usePush()
 const pushSubscribed = ref(false)
 const speechEnabled = ref(false)   // 语音是否已激活
+
+
+
+// 格式化时间，只显示 HH:MM（不显示秒）
+const formatTime = (reminder) => {
+  // 优先使用数据库中的 time 字段（如果有且格式为 HH:MM）
+  if (reminder.time && /^\d{2}:\d{2}$/.test(reminder.time)) {
+    return reminder.time;
+  }
+  // 否则从 remindAt 中提取小时和分钟
+  if (reminder.remindAt) {
+    const date = new Date(reminder.remindAt);
+    // 提取小时和分钟，确保两位数（不足两位自动补零）
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+  // 如果以上方法都失败，返回空字符串
+  return '';
+};
+
+
+
+
 
 // ========== 数据获取 ==========
 const fetchReminders = async () => {

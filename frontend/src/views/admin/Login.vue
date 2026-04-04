@@ -58,7 +58,7 @@ const handleLogin = async () => {
     localStorage.setItem('token', token)
     localStorage.setItem('user', JSON.stringify(user))
     // 跳转到后台首页
-    router.push('/admin/dashboard')
+    router.push('/admin/contacts')
   } catch (err) {
     console.error(err)
     error.value = err.response?.data?.msg || '登录失败，请检查网络'

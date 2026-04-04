@@ -7,7 +7,8 @@
         <router-link to="/admin/reminders">吃药提醒</router-link>
         <router-link to="/admin/emergency-logs">求助记录</router-link>
         <router-link to="/admin/health">健康记录</router-link>
-        <button @click="logout" class="logout-btn">退出登录</button>
+        <button v-if="isLoggedIn" @click="logout" class="logout-btn">退出登录</button>
+        <!-- <button  @click="logout" class="logout-btn">退出登录</button> -->
       </nav>
     </aside>
     <main class="content">
@@ -17,13 +18,38 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'    // 1.从 Vue 路由中导入路由工具
+// import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 
+
+// const isLoggedIn = ref(false)
+
+// 2.创建路由实例（用来监听页面跳转）
 const router = useRouter()
+
 const logout = () => {
   localStorage.removeItem('token')
   router.push('/admin/login')
 }
+
+// onMounted(() => {
+//   // 每次组件挂载时检查 token
+//   isLoggedIn.value = !!localStorage.getItem('token')
+// })
+
+
+// 关于“退出登录”按钮的显示与隐藏：Vue Router 路由守卫 + 全局状态,使用一个全局的响应式状态（ref）来存储登录状态，并在 logout 和登录成功时更新。
+// 3.创建响应式变量：记录用户是否登录  localStorage.getItem('token')从浏览器本地存储里拿 token,!!把值转成 布尔值
+const isLoggedIn = ref(!!localStorage.getItem('token'))
+// ref(...) 把 true/false 变成响应式变量,只要 isLoggedIn 变了，页面会自动更新
+
+// 监听路由变化，重新检查 token
+// 4.创建响应式变量：记录用户是否登录
+watch(() => router.currentRoute.value, () => {
+  isLoggedIn.value = !!localStorage.getItem('token')
+}, { immediate: true })
+
 </script>
 
 <style scoped>

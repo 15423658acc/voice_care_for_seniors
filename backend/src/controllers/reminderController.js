@@ -11,6 +11,16 @@ webpush.setVapidDetails(
     process.env.VAPID_PRIVATE_KEY
 )
 
+
+// 将前端传来的本地时间字符串（如 "2026-04-04T09:50"）转换为正确的 UTC Date 对象
+// 前端时间是中国时区（UTC+8）
+function parseLocalToUTC(localDateTimeStr) {
+    if (!localDateTimeStr) return null;
+    // 方法：补上 +08:00 时区后缀，然后 new Date
+    const dateWithTZ = new Date(localDateTimeStr + '+08:00');
+    return dateWithTZ;
+}
+
 // 获取今日提醒（简化：假设所有提醒都属于某个默认用户，实际需关联老人用户）
 const getTodayReminders = async (req, res, next) => {
     try {
@@ -124,15 +134,25 @@ const createReminder = async (req, res, next) => {
         if (!title || !remindAt) {
             return res.status(400).json({ code: 400, msg: '标题和提醒时间不能为空' })
         }
+
+        // 将本地时间转为 UTC Date
+        const utcRemindAt = parseLocalToUTC(remindAt);
+        if (!utcRemindAt || isNaN(utcRemindAt.getTime())) {
+            return res.status(400).json({ code: 400, msg: '提醒时间格式无效' });
+        }
+
+        // 同时提取 time 字段（HH:MM），用于定时任务
+        const timeStr = utcRemindAt.toLocaleTimeString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' }).slice(0,5);
+
         const newReminder = await prisma.reminder.create({
             data: {
                 title,
                 description: description || '',
-                remindAt: new Date(remindAt),
+                remindAt: utcRemindAt,
                 medicine: medicine || '',
                 userId: targetUserId,
                 taken: false,
-                time: new Date(remindAt).toLocaleTimeString()  // 或者从请求中单独获取
+                time: timeStr     // 或者从请求中单独获取
             }
         })
         res.status(201).json({ code: 200, data: newReminder })
@@ -146,28 +166,50 @@ const updateReminder = async (req, res, next) => {
     try {
         const { id } = req.params
         const { title, description, remindAt, medicine, taken } = req.body
+
+        // console.log('=== 更新提醒 ===');
+        // console.log('id:', id);
+        // console.log('接收到的body:', req.body);
+
         const reminder = await prisma.reminder.findUnique({
             where: { id: parseInt(id) }
         })
-        if (!reminder) return res.status(404).json({ code: 404, msg: '提醒不存在' })
+        // console.log('收到更新请求, id:', id, 'body:', req.body, 'user:', req.user)
+        if (!reminder) {
+            console.log('提醒不存在');
+            return res.status(404).json({code: 404, msg: '提醒不存在'})
+        }
+        console.log('数据库原记录:', reminder);
         if (req.user.role !== 'child' && reminder.userId !== req.user.id) {
+            console.log('权限不足');
             return res.status(403).json({ code: 403, msg: '无权操作' })
+        }
+
+        // 准备更新数据
+        let updateData = {
+            title: title !== undefined ? title : reminder.title,
+            description: description !== undefined ? description : reminder.description,
+            medicine: medicine !== undefined ? medicine : reminder.medicine,
+            taken: taken !== undefined ? taken : reminder.taken
+        };
+        if (remindAt) {
+            const utcRemindAt = parseLocalToUTC(remindAt);
+            if (!utcRemindAt || isNaN(utcRemindAt.getTime())) {
+                return res.status(400).json({ code: 400, msg: '提醒时间格式无效' });
+            }
+            updateData.remindAt = utcRemindAt;
+            updateData.time = remindAt.slice(11, 16);  // 直接取 HH:MM
         }
         const updated = await prisma.reminder.update({
             where: { id: parseInt(id) },
-            data: {
-                title: title || reminder.title,
-                description: description !== undefined ? description : reminder.description,
-                remindAt: remindAt ? new Date(remindAt) : reminder.remindAt,
-                medicine: medicine !== undefined ? medicine : reminder.medicine,
-                taken: taken !== undefined ? taken : reminder.taken
-            }
+            data: updateData
         })
         res.json({ code: 200, data: updated })
     } catch (error) {
         next(error)
     }
 }
+
 
 // 删除提醒
 const deleteReminder = async (req, res, next) => {

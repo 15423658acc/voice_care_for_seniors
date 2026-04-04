@@ -42,6 +42,7 @@ const getLogById = async (req, res, next) => {
 }
 
 // 创建求助记录（老人端触发）
+// 对于查看求助记录中的地图：在createLog方法将前端传来的location原样保存（一个完整的 URL）。同时修改老人端代码，在紧急呼叫时调用 createLog 接口。
 const createLog = async (req, res, next) => {
     try {
         const { latitude, longitude, location } = req.body

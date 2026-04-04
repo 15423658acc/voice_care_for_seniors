@@ -118,6 +118,7 @@ const editReminder = (reminder) => {
 }
 
 const submitReminder = async () => {
+  // console.log('提交的数据:', form.value);
   try {
     if (isEdit.value) {
       await api.put(`/reminders/${form.value.id}`, {
