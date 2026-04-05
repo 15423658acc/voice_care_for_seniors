@@ -16,13 +16,26 @@ datasource db {
 
 // 用户模型
 model User {
-  id        Int      @id @default(autoincrement()) // 主键，自增
-  username  String   @unique // 用户名，唯一
-  password  String // 加密后的密码
-  email     String?  @unique // 新增邮箱字段，可选且唯一（可选
-  role      String   @default("child") // 角色：elder（老人）或 child（子女），默认老人
+  id       Int     @id @default(autoincrement()) // 主键，自增
+  username String  @unique // 用户名，唯一
+  password String // 加密后的密码
+  email    String? @unique // 新增邮箱字段，可选且唯一（可选
+  role     String  @default("child") // 角色：elder（老人）或 child（子女），默认老人
+
+  // 老人登录系统新增字段 （子女和老人通过同一个 User 表中的自关联实现关联）
+  parentId Int?    @map("parent_id") // 关联子女的用户ID，仅老人有值
+  // parentId 可选外键，parent字段将这个指向同一个表的id字段
+  fullName String? @map("full_name")
+  phone    String?
+  age      Int?
+
   createdAt DateTime @default(now()) @map("created_at") // 创建时间，默认当前时间
   updatedAt DateTime @updatedAt @map("updated_at") // 更新时间，自动更新
+
+  // 关联关系：老人所属的子女
+  parent   User?  @relation("ChildToElder", fields: [parentId], references: [id])
+  // 反向关联：子女拥有的老人列表（子女可以通过 children 查询到所有关联的老人，老人可以通过 parent 查询到自己的子女。）
+  children User[] @relation("ChildToElder")
 
   // 关联关系：一个用户可以有多个提醒
   reminders        Reminder[]

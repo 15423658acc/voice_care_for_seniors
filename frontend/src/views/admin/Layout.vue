@@ -22,9 +22,6 @@ import { useRouter } from 'vue-router'    // 1.从 Vue 路由中导入路由工�
 // import { ref, onMounted } from 'vue'
 import { ref, watch } from 'vue'
 
-
-// const isLoggedIn = ref(false)
-
 // 2.创建路由实例（用来监听页面跳转）
 const router = useRouter()
 
@@ -33,21 +30,15 @@ const logout = () => {
   router.push('/admin/login')
 }
 
-// onMounted(() => {
-//   // 每次组件挂载时检查 token
-//   isLoggedIn.value = !!localStorage.getItem('token')
-// })
-
-
 // 关于“退出登录”按钮的显示与隐藏：Vue Router 路由守卫 + 全局状态,使用一个全局的响应式状态（ref）来存储登录状态，并在 logout 和登录成功时更新。
 // 3.创建响应式变量：记录用户是否登录  localStorage.getItem('token')从浏览器本地存储里拿 token,!!把值转成 布尔值
 const isLoggedIn = ref(!!localStorage.getItem('token'))
 // ref(...) 把 true/false 变成响应式变量,只要 isLoggedIn 变了，页面会自动更新
 
-// 监听路由变化，重新检查 token
+// 监听路由变化，重新检查 token,watch(..., () => { ... }, { immediate: true })监听路由变化，每次切换页面都重新检查登录。
 // 4.创建响应式变量：记录用户是否登录
-watch(() => router.currentRoute.value, () => {
-  isLoggedIn.value = !!localStorage.getItem('token')
+watch(() => router.currentRoute.value, () => {   // 监听当前页面路由,只要页面跳转，就触发监听
+  isLoggedIn.value = !!localStorage.getItem('token')    // 并更新登录状态 isLoggedIn
 }, { immediate: true })
 
 </script>
