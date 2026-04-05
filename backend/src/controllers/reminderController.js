@@ -243,8 +243,11 @@ const updateReminder = async (req, res, next) => {
             medicine: medicine !== undefined ? medicine : reminder.medicine,
             // 更新后处理 remindAt（如果传入且与原值不同，则重置 taken = false）
 
-            taken: taken !== undefined ? taken : reminder.taken
+            // taken: taken !== undefined ? taken : reminder.taken
         };
+
+        // 标记是否修改了提醒时间
+        let isRemindAtChanged = false
 
 
         if (remindAt) {
@@ -252,9 +255,30 @@ const updateReminder = async (req, res, next) => {
             if (!utcRemindAt || isNaN(utcRemindAt.getTime())) {
                 return res.status(400).json({ code: 400, msg: '提醒时间格式无效' });
             }
+
+            // 比较新时间与原时间是否相同（精确到分钟，忽略秒/毫秒）
+            const oldTime = reminder.remindAt;
+            const newTime = utcRemindAt;
+            if (oldTime.getTime() !== newTime.getTime()) {
+                isRemindAtChanged = true;
+            }
+
+
             updateData.remindAt = utcRemindAt;
             updateData.time = remindAt.slice(11, 16);  // 直接取 HH:MM
         }
+
+        // 如果提醒时间被修改，则强制重置 taken 为 false
+        if (isRemindAtChanged) {
+            updateData.taken = false;
+        } else {
+            // 否则，如果前端显式传了 taken，则使用前端值；否则保持原值
+            if (taken !== undefined) {
+                updateData.taken = taken;
+            }
+        }
+
+
         const updated = await prisma.reminder.update({
             where: { id: parseInt(id) },
             data: updateData
