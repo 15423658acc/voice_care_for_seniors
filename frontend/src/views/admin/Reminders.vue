@@ -77,7 +77,9 @@ const form = ref({
 
 const fetchElders = async () => {
   try {
-    const res = await api.get('/users?role=elder')
+    // const res = await api.get('/users?role=elder')
+    const res = await api.get('/users/elders')  // 修改为获取当前子女绑定的老人列表
+    // console.log('fetchElders 返回的 res:', res)
     elders.value = res
   //   if (elders.value.length) selectedUserId.value = elders.value[0].id
   // } catch (error) {

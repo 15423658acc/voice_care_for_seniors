@@ -3,19 +3,44 @@ const prisma = new PrismaClient()
 
 /**
  * 获取记录列表
- * - 子女可传入 userId 查询指定老人的记录
+ * - 子女可传入 userId 查询指定老人的记录，且必须验证归属
  * - 老人只能查看自己的记录
  */
 const getRecords = async (req, res, next) => {
     try {
-        let userId = req.user.id  // 默认当前登录用户
-        // 如果是子女角色，并且请求参数中指定了userId，则查询该老人的记录
-        if (req.user.role === 'child' && req.query.userId) {
-            userId = parseInt(req.query.userId)
+        let whereCondition = {}
+        // console.log('当前登录用户:', req.user)
+        // console.log('请求参数 userId:', req.query.userId)
+
+        if (req.user.role === 'elder') {
+            whereCondition.userId = req.user.id
+        }
+        else if (req.user.role === 'child') {
+            const elderId = parseInt(req.query.userId)
+            if (!elderId) {
+                return res.status(400).json({ code: 400, msg: '请指定老人ID' })
+            }
+            // 验证该老人是否属于当前子女
+            const elder = await prisma.user.findFirst({
+                where: {
+                    id: elderId,
+                    role: 'elder',
+                    parentId: req.user.id
+                }
+            })
+            if (!elder) {
+                return res.status(403).json({ code: 403, msg: '无权访问该老人的数据' })
+            }
+            whereCondition.userId = elderId
+        }
+        else {
+            return res.status(403).json({ code: 403, msg: '无效角色' })
         }
 
+
+
         const records = await prisma.healthRecord.findMany({
-            where: { userId },
+            where: whereCondition,
             orderBy: { recordDate: 'desc' }  // 按日期倒序
         })
         res.json({ code: 200, data: records })

@@ -5,6 +5,16 @@ import { createRouter, createWebHistory } from 'vue-router'
 // // 2. 定义路由表：列出所有页面的跳转规则
 const routes = [
   {
+    path:'/elder/login',
+    component:() => import('../views/elder/Login.vue'),
+    meta:{title:'老人登录', requiresAuth:false}
+  },
+  {
+    path:'/elder/register',
+    component:() => import('../views/elder/Register.vue'),
+    meta:{title:'老人注册', requiresAuth:false}
+  },
+  {
     path: '/',
     name: 'home',
     component: () => import('../views/Home.vue'), // 老人端主页
@@ -117,22 +127,83 @@ router.beforeEach((to, from, next) => {
   // 设置页面标题
   document.title = to.meta.title ? `老友助手 - ${to.meta.title}` : '老友助手'
 
-  // 判断是否需要登录
-  if (to.meta.requiresAuth) {
-    // 检查本地存储中是否有 token（假设登录后把 token 存在 localStorage 中）
-    const token = localStorage.getItem('token')
-    if (token) {
-      // 有 token，允许进入
-      next()
+
+
+    // 2. 获取本地存储的 token 和用户信息
+  const token = localStorage.getItem('token')
+  let user = null
+  try {
+    const userStr = localStorage.getItem('user')
+    if (userStr) user = JSON.parse(userStr)
+  } catch (e) {
+    user = null
+  }
+
+  // ===== 子女后台路由认证 =====
+  if (to.meta.requiresAuth === true) {
+    // 需要登录
+    if (!token) {
+      // 未登录，跳转到子女登录页，并记录要返回的地址
+      next({ name: 'admin-login', query: { redirect: to.fullPath } })
+      return
+    }
+    // 已登录，检查角色是否为 child
+    if (user && user.role === 'child') {
+      next() // 允许访问
     } else {
-      // 没有 token，跳转到后台登录页，并携带当前要访问的路径作为 redirect 参数
+      // 角色不是 child，跳转到子女登录页
       next({ name: 'admin-login', query: { redirect: to.fullPath } })
     }
-  } else {
-    // 不需要登录，直接放行
-    next()
+    return
   }
+  
+
+  // ===== 老人端路由认证 =====
+  // 判断是否为老人端需要认证的页面
+  const isElderAuthPage = to.path === '/elder/login' || to.path === '/elder/register'
+  // 非 admin 开头的页面 + 不是老人登录注册页 = 老人端受保护页面
+  const isElderProtectedPage = !to.path.startsWith('/admin') && !isElderAuthPage
+
+  if (isElderProtectedPage) {
+    if (!token) {
+      // 未登录，跳转到老人登录页
+      next('/elder/login')
+      return
+    }
+    // 已登录，检查角色是否为 elder
+    if (user && user.role === 'elder') {
+      next() // 允许访问
+    } else {
+      // 角色不是 elder，跳转到老人登录页
+      next('/elder/login')
+    }
+    return
+  }
+
+  // ===== 其他页面（登录、注册、404等）直接放行 =====
+  next()
 })
+
+
+
+
+//   // 判断是否需要登录
+//   if (to.meta.requiresAuth) {
+//     // 检查本地存储中是否有 token（假设登录后把 token 存在 localStorage 中）
+//     const token = localStorage.getItem('token')
+//     if (token) {
+//       // 有 token，允许进入
+//       next()
+//     } else {
+//       // 没有 token，跳转到后台登录页，并携带当前要访问的路径作为 redirect 参数
+//       next({ name: 'admin-login', query: { redirect: to.fullPath } })
+//     }
+    
+//   } else {
+//     // 不需要登录，直接放行
+//     next()
+//   }
+// })
 
 // 5. 导出路由器：让项目其他地方能使用
 export default router

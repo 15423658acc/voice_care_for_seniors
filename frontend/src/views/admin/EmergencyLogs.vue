@@ -57,7 +57,8 @@ const currentLog = ref({})
 
 const fetchElders = async () => {
   try {
-    const res = await api.get('/users?role=elder')
+    // const res = await api.get('/users?role=elder')
+    const res = await api.get('/users/elders')
     elders.value = res
 
     // 添加内容：默认选中第一个老人

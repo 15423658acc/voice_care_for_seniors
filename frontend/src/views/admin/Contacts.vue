@@ -66,7 +66,8 @@ const form = ref({ id: null, name: '', phone: '', email: '' })
 
 const fetchElders = async () => {
   try {
-    const res = await api.get('/users?role=elder')
+    // const res = await api.get('/users?role=elder')
+    const res = await api.get('/users/elders')  // 修改为获取当前子女绑定的老人列表
     // console.log('fetchElders 返回的 res:', res)
     elders.value = res
     // console.log('赋值后的 elders.value:', elders.value)

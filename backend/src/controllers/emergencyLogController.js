@@ -4,16 +4,36 @@ const prisma = new PrismaClient()
 // 获取求助记录列表
 const getLogs = async (req, res, next) => {
     try {
-        let where = {}
-        if (req.user.role === 'child') {
-            if (req.query.userId) {
-                where.userId = parseInt(req.query.userId)
-            }
-        } else {
-            where.userId = req.user.id
+        let whereCondition = {}
+
+        if (req.user.role === 'elder') {
+            whereCondition.userId = req.user.id
         }
+        else if (req.user.role === 'child') {
+            const elderId = parseInt(req.query.userId)
+            if (!elderId) {
+                return res.status(400).json({ code: 400, msg: '请指定老人ID' })
+            }
+            // 验证该老人是否属于当前子女
+            const elder = await prisma.user.findFirst({
+                where: {
+                    id: elderId,
+                    role: 'elder',
+                    parentId: req.user.id
+                }
+            })
+            if (!elder) {
+                return res.status(403).json({ code: 403, msg: '无权访问该老人的数据' })
+            }
+            whereCondition.userId = elderId
+        }
+        else {
+            return res.status(403).json({ code: 403, msg: '无效角色' })
+        }
+
+
         const logs = await prisma.emergencyLog.findMany({
-            where,
+            where:whereCondition,
             orderBy: { createdAt: 'desc' },
             include: { user: { select: { username: true } } }
         })

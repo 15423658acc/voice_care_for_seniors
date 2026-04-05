@@ -1,17 +1,17 @@
 const express = require('express')
 const router = express.Router()
 const healthController = require('../controllers/healthController')
-// const authMiddleware = require('../middleware/auth')
+const authMiddleware = require('../middleware/auth')
 
 // 所有接口需要认证（JWT）
-// router.use(authMiddleware)
+router.use(authMiddleware)
 
 // 开发环境：模拟登录用户（仅用于测试）
-router.use((req, res, next) => {
-    // 模拟一个老人用户，ID 假设为 1（确保数据库中有对应 ID 的老人）
-    req.user = { id: 1, role: 'elderly' }  // 如果角色逻辑暂时用不到，可只保留 id
-    next()
-})
+// router.use((req, res, next) => {
+//     // 模拟一个老人用户，ID 假设为 1（确保数据库中有对应 ID 的老人）
+//     req.user = { id: 1, role: 'elderly' }  // 如果角色逻辑暂时用不到，可只保留 id
+//     next()
+// })
 
 
 

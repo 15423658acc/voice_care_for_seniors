@@ -24,8 +24,16 @@ function parseLocalToUTC(localDateTimeStr) {
 // 获取今日提醒（简化：假设所有提醒都属于某个默认用户，实际需关联老人用户）
 const getTodayReminders = async (req, res, next) => {
     try {
+        if (req.user.role !== 'elder') {
+            return res.status(403).json({ code: 403, msg: '只有老人可以查看自己的提醒' })
+        }
+        console.log('当前登录用户:', req.user)
+        console.log('请求参数 userId:', req.query.userId)
         const reminders = await prisma.reminder.findMany({
-            where: { userId: 1 } // 假设老人用户ID=1
+            // where: { userId: 1 } // 假设老人用户ID=1
+            where: { userId: req.user.id },
+            orderBy: { remindAt: 'asc' }   //是 Prisma 查询中的排序参数，意思是：按照 remindAt 字段的值，从小到大（升序）排列结果。
+            // asc 是 ascending（升序）的缩写。
         })
         res.json({ code: 200, data: reminders })
     } catch (error) {
@@ -92,12 +100,39 @@ const checkReminders = async () => {
 // 获取提醒列表
 const getReminders = async (req, res, next) => {
     try {
-        let userId = req.user.id
-        if (req.user.role === 'child' && req.query.userId) {
-            userId = parseInt(req.query.userId)
+        // 声明查询条件对象
+        let whereCondition = {}
+
+        if (req.user.role === 'elder') {
+            // 老人只能看自己的提醒
+            whereCondition.userId = req.user.id
         }
+        else if (req.user.role === 'child') {
+            // 子女必须指定 userId（老人ID），且要验证该老人是否属于自己
+            const elderId = parseInt(req.query.userId)
+            if (!elderId) {
+                return res.status(400).json({ code: 400, msg: '请指定老人ID' })
+            }
+            // 验证该老人是否属于当前子女（通过 parentId 字段）
+            const elder = await prisma.user.findFirst({
+                where: {
+                    id: elderId,
+                    role: 'elder',
+                    parentId: req.user.id   // 当前子女的 id
+                }
+            })
+            if (!elder) {
+                return res.status(403).json({ code: 403, msg: '无权访问该老人的数据' })
+            }
+            // 找到后设置查询条件
+            whereCondition.userId = elderId
+        }
+        else {
+            return res.status(403).json({ code: 403, msg: '无效角色' })
+        }
+
         const reminders = await prisma.reminder.findMany({
-            where: { userId },
+            where:  whereCondition ,  //使用构建好的条件
             orderBy: { remindAt: 'asc' }
         })
         res.json({ code: 200, data: reminders })
@@ -128,9 +163,19 @@ const createReminder = async (req, res, next) => {
     try {
         const { title, description, remindAt, medicine, userId } = req.body
         let targetUserId = req.user.id
+
+        // 新增验证子女权限
         if (req.user.role === 'child' && userId) {
             targetUserId = parseInt(userId)
+            const elder = await prisma.user.findFirst({
+                where: {id: targetUserId, role: 'elder', parentId: req.user.id}
+            })
+            if (!elder) {
+                return res.status(403).json({code: 403, msg: '无权为该老人创建记录'})
+            }
         }
+
+
         if (!title || !remindAt) {
             return res.status(400).json({ code: 400, msg: '标题和提醒时间不能为空' })
         }
@@ -176,12 +221,18 @@ const updateReminder = async (req, res, next) => {
         })
         // console.log('收到更新请求, id:', id, 'body:', req.body, 'user:', req.user)
         if (!reminder) {
-            console.log('提醒不存在');
+            // console.log('提醒不存在');
             return res.status(404).json({code: 404, msg: '提醒不存在'})
         }
         console.log('数据库原记录:', reminder);
         if (req.user.role !== 'child' && reminder.userId !== req.user.id) {
-            console.log('权限不足');
+            // console.log('权限不足');
+            return res.status(403).json({ code: 403, msg: '无权操作' })
+        }
+
+
+        // 2. 权限检查（子女或本人）
+        if (req.user.role !== 'child' && reminder.userId !== req.user.id) {
             return res.status(403).json({ code: 403, msg: '无权操作' })
         }
 
@@ -190,8 +241,12 @@ const updateReminder = async (req, res, next) => {
             title: title !== undefined ? title : reminder.title,
             description: description !== undefined ? description : reminder.description,
             medicine: medicine !== undefined ? medicine : reminder.medicine,
+            // 更新后处理 remindAt（如果传入且与原值不同，则重置 taken = false）
+
             taken: taken !== undefined ? taken : reminder.taken
         };
+
+
         if (remindAt) {
             const utcRemindAt = parseLocalToUTC(remindAt);
             if (!utcRemindAt || isNaN(utcRemindAt.getTime())) {

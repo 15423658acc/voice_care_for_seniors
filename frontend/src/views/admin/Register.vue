@@ -129,7 +129,7 @@ const handleRegister = async () => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
     // 4. 跳转到后台首页
-    router.push('/admin/dashboard');
+    router.push('/admin/contacts');
   } catch (err) {
     console.error('注册失败', err);
     // 从后端返回的错误信息中提取 msg
