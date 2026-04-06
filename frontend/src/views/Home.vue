@@ -1,5 +1,6 @@
 <template>
   <div class="home">
+    <button class="logout-btn" @click="handleLogout">🚪 退出登录</button>
     <h1 class="welcome">老友助手</h1>
     <div class="grid">
       <router-link to="/emergency" class="card emergency">🚨 紧急呼叫</router-link>
@@ -13,9 +14,45 @@
   </div>
 </template>
 
+<script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const handleLogout = () => {
+  // 清除本地存储的 token 和用户信息
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  // 可选：清除其他敏感数据，如推送订阅等（暂不涉及）
+  // 提示用户
+  alert('您已安全退出登录')
+  // 跳转到老人登录页
+  router.push('/elder/login')
+}
+</script>
+
 <style scoped>
 .home {
+  position: relative; /* 让退出按钮可以绝对定位在角落 */
   padding: 1rem;
+  min-height: 100vh; /* 设置最小高度为视口高度 */
+}
+.logout-btn {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  background-color: #f44336;
+  color: white;
+  font-size: 1.4rem;
+  padding: 0.8rem 1.2rem;
+  border: none;
+  border-radius: 2rem;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.logout-btn:hover {
+  background-color: #d32f2f;
 }
 .welcome {
   font-size: 2.5rem;
