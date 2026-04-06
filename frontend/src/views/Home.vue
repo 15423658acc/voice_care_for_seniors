@@ -1,6 +1,8 @@
 <template>
   <div class="home">
     <button class="logout-btn" @click="handleLogout">🚪 退出登录</button>
+        <!-- 跳转管理端按钮（右上角） -->
+    <button class="admin-redirect-btn" @click="handleGoAdmin">🔧 跳转管理端</button>
     <h1 class="welcome">老友助手</h1>
     <div class="grid">
       <router-link to="/emergency" class="card emergency">🚨 紧急呼叫</router-link>
@@ -23,11 +25,23 @@ const handleLogout = () => {
   // 清除本地存储的 token 和用户信息
   localStorage.removeItem('token')
   localStorage.removeItem('user')
-  // 可选：清除其他敏感数据，如推送订阅等（暂不涉及）
   // 提示用户
   alert('您已安全退出登录')
   // 跳转到老人登录页
   router.push('/elder/login')
+}
+
+// 跳转管理端逻辑
+const handleGoAdmin = () => {
+    // 1. 清除老人端本地存储的用户信息（自动执行退出登录）
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  
+  // 2. 提示用户（可选，增强体验）
+  alert('已退出老人端，正在跳转管理端登录页...')
+  
+  // 3. 跳转到管理端登录页
+  router.push('/admin/login')
 }
 </script>
 
@@ -37,6 +51,7 @@ const handleLogout = () => {
   padding: 1rem;
   min-height: 100vh; /* 设置最小高度为视口高度 */
 }
+/* 退出登录按钮（左下角） */
 .logout-btn {
   position: fixed;
   bottom: 1rem;
@@ -82,4 +97,23 @@ const handleLogout = () => {
 .voice { background-color: #fff3e0; color: #ef6c00; }
 .fraud { background-color: #ede7f6; color: #512da8; }
 .weather { background-color: #e1f5fe; color: #0277bd; }
+
+/* 新增跳转管理端按钮（右上角） */
+.admin-redirect-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background-color: #2196f3;   /* 蓝色主题，与退出按钮风格一致但颜色不同 */
+  color: white;
+  font-size: 1.4rem;
+  padding: 0.8rem 1.2rem;
+  border: none;
+  border-radius: 2rem;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+.admin-redirect-btn:hover {
+  background-color: #0b7dda;
+}
 </style>
