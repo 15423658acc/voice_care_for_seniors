@@ -237,10 +237,24 @@ const elderRegister = async (req, res, next) => {
         if (phone && !isValidPhone(phone)) {
             return res.status(400).json({ code: 400, msg: '手机号格式不正确，应为11位数字' })
         }
-        // 邮箱校验（简单格式）
-        if (email && !/^\S+@\S+\.\S+$/.test(email)) {
-            return res.status(400).json({ code: 400, msg: '邮箱格式不正确/邮箱已存在' })
+
+
+        let normalizedEmail = null;
+        if (email && email.trim() !== '') {
+            normalizedEmail = email.trim();
+            // 简单格式校验（你已经做了）
+            if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+                return res.status(400).json({ code: 400, msg: '邮箱格式不正确' });
+            }
+            // 检查邮箱是否已被占用
+            const existingEmail = await prisma.user.findUnique({
+                where: { email: normalizedEmail }
+            });
+            if (existingEmail) {
+                return res.status(409).json({ code: 409, msg: '邮箱已被注册' });
+            }
         }
+
 
         if (!childUsername) {
             return res.status(400).json({ code: 400, msg: '请提供子女账号的用户名' })
@@ -279,7 +293,7 @@ const elderRegister = async (req, res, next) => {
                 fullName: fullName || null,
                 phone: phone || null,
                 age: age ? parseInt(age) : null,
-                email: email || null,   // 新增
+                email: normalizedEmail   // 新增
             }
         })
 
@@ -327,10 +341,157 @@ const getMe = async (req, res, next) => {
     }
 }
 
+
+/**
+ * 密码重置代码逻辑
+ *   引入 Node.js 内置的 crypto 模块，用于生成随机令牌和计算哈希值。
+ * 定义一个箭头函数 generateResetToken，用于生成密码重置令牌。函数返回包含原始令牌和哈希后的令牌的对象。
+ */
+const crypto = require('crypto')
+const nodemailer = require('nodemailer') // 复用已有的邮件配置，用于发送邮件。
+
+// 生成随机令牌（返回原始令牌和哈希）
+const generateResetToken = () => {
+    //  生成 32 字节的随机数据，再调用 .toString('hex') 将其转换为十六进制字符串，得到原始令牌 rawToken。
+    const rawToken = crypto.randomBytes(32).toString('hex')
+    // 使用 SHA-256 哈希算法对 rawToken 进行哈希处理：update(rawToken) 传入原始令牌，digest('hex') 输出十六进制字符串，得到哈希令牌 hashedToken。
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex')
+    // 返回一个对象，包含原始令牌和哈希后的令牌。
+    return { rawToken, hashedToken }
+}
+
+// 发送重置邮件（使用已配置的 transporter）
+// 定义一个异步函数 sendResetEmail，接收收件人邮箱 email、原始令牌 rawToken 和用户 ID userId，用于发送密码重置邮件。
+const sendResetEmail = async (email, rawToken, userId) => {
+    // 构造重置密码的 URL，其中 FRONTEND_URL 从环境变量读取，URL 中包含原始令牌和用户 ID 作为查询参数。
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}&id=${userId}`
+    // 定义邮件选项对象
+    const mailOptions = {
+        from: `"老友助手" <${process.env.SMTP_USER}>`,
+        to: email,   //收件人邮箱
+        subject: '重置您的老友助手账号密码',
+        html: `
+      <h1>密码重置请求</h1>
+      <p>您好，您请求重置老友助手账号的密码。</p>
+      <p>请将以下链接在地址栏中打开以设置新密码（链接有效期为1小时）：</p>
+      <a href="${resetUrl}" target="_blank">${resetUrl}</a>
+      <p>如果您没有请求重置密码，请忽略此邮件。</p>
+      <p>感谢使用老友助手！</p>
+    `
+    }
+    // 使用 nodemailer.createTransport 创建一个邮件传输器 transporter
+    const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,   // SMTP 服务器主机地址
+        port: process.env.SMTP_PORT,   //SMTP 服务器端口
+        secure: process.env.SMTP_SECURE === 'true',  //是否使用 SSL/TLS 安全连接
+        auth: {
+            user: process.env.SMTP_USER,   //SMTP 认证信息
+            pass: process.env.SMTP_PASS
+        }
+    })
+    // 使用 transporter.sendMail 发送邮件，await 等待发送完成（异步操作）。
+    await transporter.sendMail(mailOptions)
+}
+
+/**
+ * 忘记密码 - 发送重置邮件
+ * 请求体：{ email }
+ */
+// 定义异步函数 forgotPassword，作为处理忘记密码请求的控制器函数，接收 Express 的 req、res、next 参数。
+const forgotPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body
+        if (!email) {
+            return res.status(400).json({ code: 400, msg: '请提供邮箱地址' })
+        }
+        // 使用 Prisma 客户端查询数据库，查找用户（不区分角色，老人或子女都可以）
+        const user = await prisma.user.findUnique({ where: { email } })
+        if (!user) {
+            // 为了安全，不明确提示邮箱不存在，返回通用成功
+            return res.json({ code: 200, msg: '如果该邮箱已注册，我们将发送重置链接' })
+        }
+
+        // 生成令牌（原始令牌给前端，哈希存数据库），调用 generateResetToken 生成原始令牌和哈希令牌
+        const { rawToken, hashedToken } = generateResetToken()
+        // 计算过期时间：当前时间戳加上 1 小时（60*60*1000 毫秒），得到 Date 对象。
+        const expiry = new Date(Date.now() + 60 * 60 * 1000) // 1小时过期
+
+        // 存储哈希和过期时间
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                resetToken: hashedToken,
+                resetTokenExpiry: expiry
+            }
+        // 使用 Prisma 更新用户记录，将哈希令牌存入 resetToken 字段，过期时间存入 resetTokenExpiry 字段。
+        })
+
+        // 发送邮件，传入用户邮箱、原始令牌和用户 ID。
+        await sendResetEmail(email, rawToken, user.id)
+
+        res.json({ code: 200, msg: '重置链接已发送至您的邮箱，请查收' })
+    } catch (error) {
+        next(error)   // 将错误传递给 Express 的 next 函数，由全局错误处理中间件处理。
+    }
+}
+
+/**
+ * 重置密码 - 验证令牌并更新密码
+ * 请求体：{ token, userId, newPassword }
+ */
+// 定义异步函数 resetPassword，处理密码重置请求，接收 Express 的 req、res、next。
+const resetPassword = async (req, res, next) => {
+    try {
+        // 从请求体解构出 token（原始令牌）、userId、newPassword。
+        const { token, userId, newPassword } = req.body
+        if (!token || !userId || !newPassword) {
+            return res.status(400).json({ code: 400, msg: '参数不完整' })
+        }
+
+        // 密码强度校验
+        const isValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(newPassword)
+        if (!isValid) {
+            return res.status(400).json({ code: 400, msg: '密码必须至少8位，且包含大写字母、小写字母和数字' })
+        }
+
+        // 查找用户
+        const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } })
+        if (!user) {
+            // 根据 userId 查询用户，userId 可能是字符串，使用 parseInt 转为整数。
+            return res.status(404).json({ code: 404, msg: '用户不存在' })
+        }
+
+        // 验证令牌哈希：对请求中提供的原始令牌 token 进行 SHA-256 哈希，得到 hashedToken，用于与数据库中存储的哈希比较。
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+        if (user.resetToken !== hashedToken || user.resetTokenExpiry < new Date()) {  //数据库中存储的 resetToken 是否与计算出的哈希一致，以及过期时间是否小于当前时间
+            return res.status(400).json({ code: 400, msg: '重置链接无效或已过期' })
+        }
+
+        // 加密新密码
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+        // 更新密码，并清除重置令牌
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                password: hashedPassword,
+                resetToken: null,
+                resetTokenExpiry: null
+            }
+        })
+
+        res.json({ code: 200, msg: '密码重置成功，请使用新密码登录' })
+    } catch (error) {
+        next(error)
+    }
+}
+
 module.exports = {
     login,
     register,
     getMe,
     elderLogin,
-    elderRegister
+    elderRegister,
+    forgotPassword,  //导出方法，不导出内部辅助函数
+    resetPassword
 }

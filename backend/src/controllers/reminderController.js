@@ -27,8 +27,8 @@ const getTodayReminders = async (req, res, next) => {
         if (req.user.role !== 'elder') {
             return res.status(403).json({ code: 403, msg: '只有老人可以查看自己的提醒' })
         }
-        console.log('当前登录用户:', req.user)
-        console.log('请求参数 userId:', req.query.userId)
+        // console.log('当前登录用户:', req.user)
+        // console.log('请求参数 userId:', req.query.userId)
         const reminders = await prisma.reminder.findMany({
             // where: { userId: 1 } // 假设老人用户ID=1
             where: { userId: req.user.id },

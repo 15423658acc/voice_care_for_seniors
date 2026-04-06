@@ -1,5 +1,6 @@
 <template>
   <div class="login-container">
+    <button class="logout-btn" @click="handleJumpElder">🚪 老人端</button>
     <h1 class="title">子女后台登录</h1>
     <form @submit.prevent="handleLogin" class="login-form">
       <div class="form-group">
@@ -29,6 +30,7 @@
       <p class="register-link">
           还没有账号？<router-link to="/admin/register">立即注册</router-link>
       </p>
+      <p class="forgot-password"><router-link to="/forgot-password">忘记密码？</router-link></p>
     </form>
   </div>
 </template>
@@ -42,6 +44,11 @@ const router = useRouter()
 const form = ref({ username: '', password: '' })
 const loading = ref(false)
 const error = ref('')
+
+// 跳转管理端逻辑
+const handleJumpElder = () => {
+  router.push('/elder/login')
+}
 
 const handleLogin = async () => {
   if (!form.value.username || !form.value.password) {
@@ -76,6 +83,7 @@ const handleLogin = async () => {
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  position: relative; /* 让跳转按钮可以绝对定位在角落 */
 }
 .title {
   text-align: center;
@@ -124,5 +132,31 @@ input {
 .register-link a {
   color: #2196f3;
   text-decoration: none;
+}
+.forgot-password {
+  text-align: center;
+  margin-top: 1rem;
+}
+.forgot-password a {
+  color: #2196f3;
+  text-decoration: none;
+}
+
+.logout-btn {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  background-color: #f44336;
+  color: white;
+  font-size: 1.4rem;
+  padding: 0.8rem 1.2rem;
+  border: none;
+  border-radius: 2rem;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.logout-btn:hover {
+  background-color: #d32f2f;
 }
 </style>

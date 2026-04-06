@@ -62,6 +62,18 @@ const routes = [
     component: () => import('../views/Profile.vue'),
     meta: { title: '个人设置', requiresAuth: false }
   },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('../views/ForgotPassword.vue'),
+    meta: { title: '忘记密码', requiresAuth: false }
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: () => import('../views/ResetPassword.vue'),
+    meta: { title: '重置密码', requiresAuth: false }
+  },
   // 子女后台路由
   {
     path: '/admin',
@@ -158,11 +170,21 @@ router.beforeEach((to, from, next) => {
   }
   
 
+  // // ===== 老人端路由认证 =====
+  // // 判断是否为老人端需要认证的页面
+  // const isElderAuthPage = to.path === '/elder/login' || to.path === '/elder/register'
+  // // 非 admin 开头的页面 + 不是老人登录注册页 = 老人端受保护页面
+  // const isElderProtectedPage = !to.path.startsWith('/admin') && !isElderAuthPage
+
+
   // ===== 老人端路由认证 =====
-  // 判断是否为老人端需要认证的页面
-  const isElderAuthPage = to.path === '/elder/login' || to.path === '/elder/register'
-  // 非 admin 开头的页面 + 不是老人登录注册页 = 老人端受保护页面
-  const isElderProtectedPage = !to.path.startsWith('/admin') && !isElderAuthPage
+  // 定义老人端公开页面（无需登录即可访问）
+  const elderPublicPages = ['/elder/login', '/elder/register', '/forgot-password', '/reset-password']
+  // 判断当前页面是否为公开页面
+  const isElderPublicPage = elderPublicPages.includes(to.path)
+  // 老人端受保护页面：非 admin 开头 且 不是公开页面
+  const isElderProtectedPage = !to.path.startsWith('/admin') && !isElderPublicPage
+
 
   if (isElderProtectedPage) {
     if (!token) {

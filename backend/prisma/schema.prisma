@@ -44,6 +44,10 @@ model User {
   EmergencyContact EmergencyContact[]
   EmergencyLog     EmergencyLog[]
 
+  // 找回密码
+  resetToken       String?   @map("reset_token") // 重置密码令牌（哈希值）
+  resetTokenExpiry DateTime? @map("reset_token_expiry") // 令牌过期时间
+
   @@map("users") // 指定数据库表名为 users
 }
 
