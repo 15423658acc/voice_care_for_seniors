@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const { generateToken } = require('../utils/jwt')
+const { isValidPhone,isValidPassword } = require('../utils/validator')
 
 // 邮箱格式正则表达式
 const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
@@ -64,10 +65,14 @@ const login = async (req, res, next) => {
  */
 const register = async (req, res, next) => {
     try {
-        const { username, password, confirmPassword, email } = req.body;
+        const { username, password, confirmPassword, email ,agreeTerms } = req.body;
 
         // ========== 1. 参数基础校验 ==========
         // 用户名不能为空
+        if (!agreeTerms) {
+            return res.status(400).json({ code: 400, msg: '请阅读并同意用户协议和隐私政策' })
+        }
+
         if (!username || !username.trim()) {
             return res.status(400).json({ code: 400, msg: '用户名不能为空' });
         }
@@ -75,10 +80,14 @@ const register = async (req, res, next) => {
         if (!password) {
             return res.status(400).json({ code: 400, msg: '密码不能为空' });
         }
-        // 密码长度至少6位
-        if (password.length < 6) {
-            return res.status(400).json({ code: 400, msg: '密码长度至少6位' });
+        // 密码强度校验
+        if (!isValidPassword(password)) {
+            return res.status(400).json({ code: 400, msg: '密码必须至少8位，且包含大写字母、小写字母和数字' })
         }
+        // 密码长度至少6位
+        // if (password.length < 6) {
+        //     return res.status(400).json({ code: 400, msg: '密码长度至少6位' });
+        // }
         // 确认密码是否一致
         if (password !== confirmPassword) {
             return res.status(400).json({ code: 400, msg: '两次输入的密码不一致' });
@@ -87,6 +96,11 @@ const register = async (req, res, next) => {
         if (email && !emailRegex.test(email)) {
             return res.status(400).json({ code: 400, msg: '邮箱格式不正确' });
         }
+
+        // // 手机号校验（如果提供了手机号）
+        // if (phone && !isValidPhone(phone)) {
+        //     return res.status(400).json({ code: 400, msg: '手机号格式不正确，应为11位数字' })
+        // }
 
         // ========== 2. 检查用户名是否已存在 ==========
         const existingUser = await prisma.user.findUnique({
@@ -204,12 +218,30 @@ const elderLogin = async (req, res, next) => {
 const elderRegister = async (req, res, next) => {
     // req：前端发来的请求，包含表单数据； res：服务器返回给前端的响应； next：报错时自动跳到错误处理函数（交给错误处理中间件）
     try {
-        const { username, password, fullName, phone, age, childUsername } = req.body
+        const { username, password, fullName, phone, age, childUsername,agreeTerms,email } = req.body
 
         // 1. 基础校验
+        if (!agreeTerms) {
+            return res.status(400).json({ code: 400, msg: '请阅读并同意用户协议和隐私政策' })
+        }
+
         if (!username || !password) {
             return res.status(400).json({ code: 400, msg: '用户名和密码不能为空' })
         }
+
+        // 密码强度校验
+        if (!isValidPassword(password)) {
+            return res.status(400).json({ code: 400, msg: '密码必须至少8位，且包含大写字母、小写字母和数字' })
+        }
+        // 手机号校验（如果提供了手机号）
+        if (phone && !isValidPhone(phone)) {
+            return res.status(400).json({ code: 400, msg: '手机号格式不正确，应为11位数字' })
+        }
+        // 邮箱校验（简单格式）
+        if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+            return res.status(400).json({ code: 400, msg: '邮箱格式不正确/邮箱已存在' })
+        }
+
         if (!childUsername) {
             return res.status(400).json({ code: 400, msg: '请提供子女账号的用户名' })
         }
@@ -246,7 +278,8 @@ const elderRegister = async (req, res, next) => {
                 parentId: childUser.id,
                 fullName: fullName || null,
                 phone: phone || null,
-                age: age ? parseInt(age) : null
+                age: age ? parseInt(age) : null,
+                email: email || null,   // 新增
             }
         })
 
