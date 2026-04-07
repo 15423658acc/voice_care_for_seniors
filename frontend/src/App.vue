@@ -4,13 +4,13 @@
 <template>
   <div height="60px" width="60px">
 
-    <router-link to="/">Home</router-link>
-    <router-link to="/reminder">reminder</router-link>
+    <!-- <router-link to="/">Home</router-link> -->
+    <!-- <router-link to="/reminder">reminder</router-link>
     <router-link to="/emergency">emergency</router-link>
     <router-link to="/weather">weather</router-link>
     <router-link to="/voiceAssistant">VoiceAssistant</router-link>
     <router-link to="/antifraud">antifraud</router-link>
-    <router-link to="/healthRecords">healthRecords</router-link>
+    <router-link to="/healthRecords">healthRecords</router-link> -->
     
 
     <router-view/>

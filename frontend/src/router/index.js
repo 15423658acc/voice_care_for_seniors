@@ -179,7 +179,7 @@ router.beforeEach((to, from, next) => {
 
   // ===== 老人端路由认证 =====
   // 定义老人端公开页面（无需登录即可访问）
-  const elderPublicPages = ['/elder/login', '/elder/register', '/forgot-password', '/reset-password']
+  const elderPublicPages = ['/elder/login', '/elder/register', '/forgot-password', '/reset-password','/not-found']
   // 判断当前页面是否为公开页面
   const isElderPublicPage = elderPublicPages.includes(to.path)
   // 老人端受保护页面：非 admin 开头 且 不是公开页面
