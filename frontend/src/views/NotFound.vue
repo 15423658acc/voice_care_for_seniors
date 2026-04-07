@@ -1,306 +1,214 @@
 <template>
-  <div class="not-found-container">
-    <!-- 404 内容区域 -->
-    <div class="content">
-      <h1 class="title">404</h1>
-      <p class="message">
-        👻 哎呀，页面走丢了... <br />
-        让幽灵带你回家吧 ~
-      </p>
-      <button class="home-btn" @click="goHome">返回首页</button>
-    </div>
-
-    <!-- 跟随鼠标/手指的幽灵 -->
-    <div ref="ghostRef" class="ghost" :style="{ transform: `translate3d(${currentX}px, ${currentY}px, 0)` }">
-      👻
+  <div class="parallax-page">
+    <header>
+      <a href="#" class="logo">404页面</a>
+    </header>
+    <section>
+      <img src="/images/stars.png" id="stars" />
+      <img src="/images/moon.png" id="moon" />
+      <img src="/images/mountains_behind.png" id="mountains_behind" />
+      <h2 id="text">404页面</h2>
+      <a href="#sec" id="btn">返回主页</a>
+      <img src="/images/mountains_front.png" id="mountains_front" />
+    </section>
+    <div class="sec" id="sec">
+      <h2>老友助手——面向银发族的智能生活陪伴与安全守护软件
+</h2>
+      <p>
+        老友助手是一款面向银发族的智能生活陪伴与安全守护 Web 应用，以 “极简、语音优先、一键守护” 为核心设计哲学，通过 PWA 技术让老年用户获得接近原生 App 的体验，无需安装、不惧复杂操作。项目旨在用科技的温度填补数字鸿沟，让银发族真正享受到智能化带来的安全与便利。
+        <br />
+        我们的核心理念是：用最轻的技术负担，给长者最重的安全承诺。
+        <br />
+        核心设计思想
+        极简交互：超大字体、高对比色块、扁平化流程，符合老年人视觉与操作习惯。
+        语音优先：基于 Web Speech API，实现全语音指令识别与反馈，降低打字与菜单学习成本。
+        一键守护：长按红色按钮即可紧急呼叫+位置短信，将复杂操作压缩为一个动作。
+        远程关怀：子女通过管理后台可远程配置提醒、更新联系人，实现“云端孝心”。
+        <br />
+        技术亮点
+        纯前端语音闭环：利用 Web Speech API 同时实现语音识别（STT）与语音合成（TTS），无需云端语音服务即可完成交互。
+        PWA 离线可用：注册 Service Worker，核心页面与静态资源可缓存，添加到主屏幕后接近原生体验，弱网/离线也能打开。
+        长按紧急机制：通过 touchstart/touchend 计时器实现 3 秒长按判定，避免误触；结合 Geolocation API 获取 GPS 坐标，调用短信接口（腾讯云/阿里云）通知预设号码。
+        子女远程配置：后端使用 Node.js + Express + 定时任务（node-schedule），存储用户配置；前端管理界面可随时修改提醒计划与紧急联系人，数据实时同步。
+        防诈骗知识库：基于关键词匹配（正则/简单 NLP），覆盖常见骗局（保健品、冒充公检法等），语音问答即时反馈。
+        <br />
+        项目价值
+        社会价值：响应国家智慧养老号召，用轻量级技术方案解决老年人“数字失能”痛点，降低意外风险。
+        技术示范：展示 PWA + Web Speech API 在适老化场景中的完整应用路径，为同类公益项目提供可复用的架构。
+        可推广性：纯 Web 技术栈，无需应用商店审核，扫码即用，成本低、覆盖广。
+    </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { onMounted } from 'vue'
 
-// DOM 元素引用
-const ghostRef = ref(null)
+onMounted(() => {
+  // 确保 DOM 元素已经渲染
+  const stars = document.getElementById('stars')
+  const moon = document.getElementById('moon')
+  const mountains_behind = document.getElementById('mountains_behind')
+  const text = document.getElementById('text')
+  const btn = document.getElementById('btn')
+  const mountains_front = document.getElementById('mountains_front')
+  const header = document.querySelector('header')
 
-// 幽灵的宽高（固定，便于计算）
-let ghostWidth = 70
-let ghostHeight = 70
-
-// 当前实际位置（用于缓动动画）
-const currentX = ref(0)
-const currentY = ref(0)
-
-// 目标位置（鼠标/手指最新位置）
-let targetX = 0
-let targetY = 0
-
-// 动画循环 ID
-let rafId = null
-
-// 边界边距（幽灵不超出视口）
-const MARGIN = 12
-
-// 缓动因子（平滑跟随）
-const EASING = 0.12
-
-// 更新边界并修正目标位置
-function clampTargetPosition() {
-  if (!ghostRef.value) return
-  const maxX = window.innerWidth - ghostWidth - MARGIN
-  const maxY = window.innerHeight - ghostHeight - MARGIN
-  targetX = Math.min(Math.max(targetX, MARGIN), maxX)
-  targetY = Math.min(Math.max(targetY, MARGIN), maxY)
-}
-
-// 根据鼠标/触摸点计算幽灵左上角的目标位置（使幽灵中心对准指针）
-function computePositionFromClient(clientX, clientY) {
-  let left = clientX - ghostWidth / 2
-  let top = clientY - ghostHeight / 2
-  // 边界限制
-  const maxX = window.innerWidth - ghostWidth - MARGIN
-  const maxY = window.innerHeight - ghostHeight - MARGIN
-  left = Math.min(Math.max(left, MARGIN), maxX)
-  top = Math.min(Math.max(top, MARGIN), maxY)
-  return { x: left, y: top }
-}
-
-// 更新目标位置（鼠标或触摸点）
-function updateTargetFromPoint(clientX, clientY) {
-  const { x, y } = computePositionFromClient(clientX, clientY)
-  targetX = x
-  targetY = y
-}
-
-// 鼠标移动事件
-function onMouseMove(e) {
-  updateTargetFromPoint(e.clientX, e.clientY)
-}
-
-// 触摸事件（移动端）
-function onTouchStart(e) {
-  e.preventDefault()
-  const touch = e.touches[0]
-  if (touch) {
-    updateTargetFromPoint(touch.clientX, touch.clientY)
-  }
-}
-
-function onTouchMove(e) {
-  e.preventDefault()
-  const touch = e.touches[0]
-  if (touch) {
-    updateTargetFromPoint(touch.clientX, touch.clientY)
-  }
-}
-
-// 窗口大小改变时，重新限制位置并修正当前幽灵位置
-function onResize() {
-  if (!ghostRef.value) return
-  // 重新获取幽灵尺寸（防止缩放导致的尺寸变化）
-  ghostWidth = ghostRef.value.offsetWidth
-  ghostHeight = ghostRef.value.offsetHeight
-  
-  // 重新限制目标位置
-  clampTargetPosition()
-  
-  // 修正当前实际位置，避免超出新边界
-  const maxX = window.innerWidth - ghostWidth - MARGIN
-  const maxY = window.innerHeight - ghostHeight - MARGIN
-  let newX = Math.min(Math.max(currentX.value, MARGIN), maxX)
-  let newY = Math.min(Math.max(currentY.value, MARGIN), maxY)
-  currentX.value = newX
-  targetX = newX
-  targetY = newY
-}
-
-// 动画循环：缓动更新实际位置
-function updateAnimation() {
-  // 线性插值缓动
-  let dx = targetX - currentX.value
-  let dy = targetY - currentY.value
-  let stepX = dx * EASING
-  let stepY = dy * EASING
-  
-  // 当移动距离极小，直接到达目标（避免无限微小移动）
-  if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-    currentX.value = targetX
-    currentY.value = targetY
-  } else {
-    currentX.value += stepX
-    currentY.value += stepY
-  }
-  
-  rafId = requestAnimationFrame(updateAnimation)
-}
-
-// 初始化幽灵位置（屏幕中央）
-function initGhostPosition() {
-  if (!ghostRef.value) return
-  ghostWidth = ghostRef.value.offsetWidth
-  ghostHeight = ghostRef.value.offsetHeight
-  
-  const centerX = (window.innerWidth - ghostWidth) / 2
-  const centerY = (window.innerHeight - ghostHeight) / 2
-  // 边界限制
-  const maxX = window.innerWidth - ghostWidth - MARGIN
-  const maxY = window.innerHeight - ghostHeight - MARGIN
-  const initX = Math.min(Math.max(centerX, MARGIN), maxX)
-  const initY = Math.min(Math.max(centerY, MARGIN), maxY)
-  
-  currentX.value = initX
-  currentY.value = initY
-  targetX = initX
-  targetY = initY
-}
-
-// 返回首页
-const goHome = () => {
-  window.location.href = '/'
-}
-
-// 挂载时绑定事件、启动动画
-onMounted(async () => {
-  await nextTick()
-  initGhostPosition()
-  
-  // 启动动画循环
-  rafId = requestAnimationFrame(updateAnimation)
-  
-  // 监听鼠标移动
-  window.addEventListener('mousemove', onMouseMove)
-  
-  // 监听触摸事件（移动端），并使用 passive: false 以允许 preventDefault 阻止滚动
-  window.addEventListener('touchstart', onTouchStart, { passive: false })
-  window.addEventListener('touchmove', onTouchMove, { passive: false })
-  
-  // 监听窗口尺寸变化
-  window.addEventListener('resize', onResize)
-})
-
-// 卸载时清理事件和动画
-onUnmounted(() => {
-  window.removeEventListener('mousemove', onMouseMove)
-  window.removeEventListener('touchstart', onTouchStart)
-  window.removeEventListener('touchmove', onTouchMove)
-  window.removeEventListener('resize', onResize)
-  if (rafId) {
-    cancelAnimationFrame(rafId)
-  }
+  window.addEventListener('scroll', function() {
+    let value = window.scrollY
+    if (stars) stars.style.left = value * 0.25 + 'px'
+    if (moon) moon.style.top = value * 1.05 + 'px'
+    if (mountains_behind) mountains_behind.style.top = value * 0.5 + 'px'
+    if (mountains_front) mountains_front.style.top = value * 0 + 'px'
+    if (text) {
+      text.style.marginRight = value * 4 + 'px'
+      text.style.marginTop = value * 1.5 + 'px'
+    }
+    if (btn) btn.style.marginTop = value * 1.5 + 'px'
+    if (header) header.style.top = value * 0.5 + 'px'
+  })
 })
 </script>
 
 <style scoped>
-/* 重置与全局样式 —— 明亮简约风格 */
-* {
+/* 引入字体 */
+@import url("https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900&display=swap");
+
+/* 所有样式都限定在 .parallax-page 内部，提高特异性，隔离外部全局样式 */
+.parallax-page * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  user-select: none; /* 避免拖动时选中文字/幽灵 */
+  font-family: "Poppins", sans-serif;
+  scroll-behavior: smooth;
 }
 
-.not-found-container {
+/* 原 body 样式迁移到根容器上 */
+.parallax-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: linear-gradient(#2b1055, #7597de);
+}
+
+.parallax-page header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 30px 100px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10000;
+}
+
+.parallax-page header .logo {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 2em;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.parallax-page header ul {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.parallax-page header ul li {
+  list-style: none;
+  margin-left: 20px;
+}
+
+.parallax-page header ul li a {
+  text-decoration: none;
+  padding: 6px 15px;
+  color: #fff;
+  border-radius: 20px;
+}
+
+.parallax-page header ul li a:hover,
+.parallax-page header ul li a.active {
+  background: #fff;
+  color: #2b1055;
+}
+
+.parallax-page section {
   position: relative;
   width: 100%;
   height: 100vh;
-  overflow: hidden;            /* 禁止滚动，避免干扰触摸跟随 */
-  background: linear-gradient(145deg, #f9faff 0%, #f0f3ff 100%);
-  font-family: 'Segoe UI', 'Poppins', system-ui, -apple-system, 'Inter', sans-serif;
+  padding: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
-/* 居中内容区域 */
-.content {
+.parallax-page section::before {
+  content: "";
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  z-index: 2;
-  width: 90%;
-  max-width: 600px;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(12px);
-  border-radius: 56px;
-  padding: 2.5rem 2rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 8px 16px rgba(0, 0, 0, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  bottom: 0;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(to top, #1c0522, transparent);
+  z-index: 1000;
 }
 
-.title {
-  font-size: clamp(5rem, 15vw, 9rem);
-  font-weight: 800;
-  background: linear-gradient(135deg, #2b2d42, #4a4e69);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-}
-
-.message {
-  font-size: 1.2rem;
-  color: #4a4e69;
-  margin: 1.2rem 0 2rem;
-  line-height: 1.6;
-  font-weight: 450;
-}
-
-.home-btn {
-  background: #2d3142;
-  border: none;
-  color: white;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 0.8rem 2rem;
-  border-radius: 48px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-  letter-spacing: 0.3px;
-}
-
-.home-btn:hover {
-  background: #1e2130;
-  transform: scale(0.96);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-}
-
-.home-btn:active {
-  transform: scale(0.94);
-}
-
-/* 幽灵样式 —— 平滑跟随，不干扰点击 */
-.ghost {
-  position: fixed;
+.parallax-page section img {
+  position: absolute;
   top: 0;
   left: 0;
-  width: 70px;
-  height: 70px;
-  font-size: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;   /* 让点击穿透，不影响按钮 */
-  z-index: 100;
-  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.12));
-  transition: filter 0.2s ease;
-  will-change: transform;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
 }
 
-/* 移动端适配：幽灵尺寸略小 */
-@media (max-width: 640px) {
-  .ghost {
-    width: 60px;
-    height: 60px;
-    font-size: 48px;
-  }
-  .content {
-    padding: 1.8rem 1.5rem;
-    width: 85%;
-  }
-  .message {
-    font-size: 1rem;
-  }
+.parallax-page section img#moon {
+  mix-blend-mode: screen;
+}
+
+.parallax-page section img#mountains_front {
+  z-index: 10;
+}
+
+.parallax-page #text {
+  position: absolute;
+  right: -350px;
+  color: #fff;
+  white-space: nowrap;
+  font-size: 7.5vw;
+  z-index: 9;
+}
+
+.parallax-page #btn {
+  text-decoration: none;
+  display: inline-block;
+  padding: 8px 30px;
+  border-radius: 40px;
+  background: #fff;
+  color: #2b1055;
+  font-size: 1.5em;
+  z-index: 9;
+  transform: translateY(100px);
+}
+
+.parallax-page .sec {
+  position: relative;
+  padding: 100px;
+  background: #1c0522;
+}
+
+.parallax-page .sec h2 {
+  font-size: 3.5em;
+  margin-bottom: 10px;
+  color: #fff;
+}
+
+.parallax-page .sec p {
+  font-size: 1em;
+  color: #fff;
 }
 </style>
