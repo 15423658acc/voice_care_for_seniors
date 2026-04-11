@@ -67,7 +67,8 @@ export default defineConfig({
   server: {
     port: 5173, // 开发服务器端口
     open: true, // 自动打开浏览器
-    // host: '0.0.0.0', // 加上这一行！
+    host: '0.0.0.0', // 加上这一行！
+    // Vite 把电脑上所有能访问项目的地址都列出来了,每个 Network 地址 = 一条进入项目的通道
     proxy: {
       // 匹配所有以 /api 开头的请求
       '/api': {

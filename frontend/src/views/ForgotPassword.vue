@@ -38,7 +38,7 @@ const handleSubmit = async () => {
     // message.value = res.data.msg
     message.value = res.msg
   } catch (error) {
-    message.value = error.response?.data?.msg || '如果该邮箱已注册，我们已发送重置链接'
+    message.value = error.response?.data?.msg || '如果该邮箱已注册，我们将发送重置链接'
   } finally {
     loading.value = false    // 无论出不出错，最后一定会执行，将loading状态设为false，按钮文字切换为“发送重置链接”
   }

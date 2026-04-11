@@ -20,11 +20,12 @@ const transporter = nodemailer.createTransport({
  */
 const sendEmergencyMail = async (req, res, next) => {
     try {
-        const { location, address } = req.body  //前端定位数据
+        const { location, address , elderName } = req.body  //前端定位数据
         if (!location || !location.latitude || !location.longitude) {
             return res.status(400).json({ code: 400, msg: '缺少位置信息' })
         }
-
+        // console.log(req.body)
+        // console.log(req)
         // 从环境变量读取紧急联系人邮箱（可配置多个）
         const toEmails = process.env.EMERGENCY_EMAILS || 's789_2023@foxmail.com'
 
@@ -35,10 +36,9 @@ const sendEmergencyMail = async (req, res, next) => {
         const mailOptions = {
             from: `"老友助手" <${process.env.SMTP_USER}>`,
             to: toEmails,
-            // 优化：移除警示emoji，标题简洁规范，无夸张话术
             subject: '【老友助手】老人紧急呼叫通知',
             html: `
-                <h1>老人紧急呼叫提醒</h1>
+                <h1>${elderName}老人紧急呼叫提醒</h1>
                 <p>您好，系统检测到老人触发了紧急呼叫功能，相关信息如下：</p>
                 <p>呼叫触发时间：${new Date().toLocaleString()}</p>
                 <p>定位信息：</p>
