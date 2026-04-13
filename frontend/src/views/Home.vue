@@ -66,7 +66,7 @@ let beepAudio = null;
 
 // 配置常量
 const COUNTDOWN_SECONDS = 3;
-const EMERGENCY_PHONE = '19707092146';   // 预设紧急号码，实际可从配置读取
+const EMERGENCY_PHONE = '19707092146';   // 预设紧急号码
 const MAX_RETRY = 2;                     // 后台发送重试次数（仅用于 fetch）
 
 // ---------- 语音播报（适老化）----------
@@ -80,7 +80,7 @@ const speakText = (text) => {
   window.speechSynthesis.speak(utterance);
 };
 
-// 获取老人姓名（用于邮件内容，保持与原接口一致）
+// 获取老人姓名
 const getElderName = () => {
   try {
     const userStr = localStorage.getItem('user');
@@ -109,28 +109,23 @@ const clearEmergencyUI = () => {
   // 不清空 statusText，因为后续会设置新的状态文字
 };
 
-// ---------- 后台发送（加入 Token 认证）----------
+/* 
+后台发送（加入 Token 认证）-向两个后端接口发送数据：邮件通知子女 + 记录日志。
+使用 keepalive: true 确保页面关闭后请求仍能发出。位置信息来自缓存的经纬度。
+*/
 const sendEmergencyToBackend = (locationData) => {
   // 1. 获取 Token（与项目原有存储 key 保持一致，通常是 'token'）
   const token = localStorage.getItem('token');
-  
   // 2. 构建地图链接
   const mapLink = `https://uri.amap.com/marker?position=${locationData.longitude},${locationData.latitude}&name=老人当前位置&coordinate=wgs84`;
 
   const emailBody = {
-    location: {
-      latitude: locationData.latitude,
-      longitude: locationData.longitude,
-    },
+    location: { latitude: locationData.latitude, longitude: locationData.longitude},
     address: mapLink,
     elderName: getElderName(),
   };
 
-  const logBody = {
-    latitude: locationData.latitude,
-    longitude: locationData.longitude,
-    location: mapLink,
-  };
+  const logBody = { latitude: locationData.latitude, longitude: locationData.longitude,location: mapLink  };
 
   // 公共请求头
   const headers = {
@@ -157,12 +152,10 @@ const sendEmergencyToBackend = (locationData) => {
   }).catch(err => console.warn('日志接口发送失败', err));
 };
 
-// ---------- 核心：执行紧急呼救（倒计时结束调用）----------
-// ⚠️ 关键：第一行必须是同步拨号，不能有任何 await 或异步操作
+// 核心：执行紧急呼救（倒计时结束调用）--关键：第一行必须是同步拨号，不能有任何 await 或异步操作
 const executeEmergency = () => {
   // 1. 立即清理 UI 状态（隐藏取消按钮、停止抖动、清零倒计时）
   clearEmergencyUI();
-
   // 2. 同步拨号（Safari 允许）
   window.location.href = `tel:${EMERGENCY_PHONE}`;
 
@@ -185,7 +178,7 @@ const executeEmergency = () => {
 
   // 5. 更新状态文字（拨号后可能很快切后台，但保留）
   statusText.value = '已拨号并通知子女，请保持电话畅通';
-  speakText('已拨号并通知子女，请保持电话畅通');
+  speakText('已拨号');
 };
 
 // ---------- 倒计时逻辑 ----------
@@ -199,9 +192,9 @@ const startEmergency = () => {
   showCancelBtn.value = true;
   countdown.value = COUNTDOWN_SECONDS;
 
-  speakText(`紧急呼救将自动发出，若要取消请点击红色取消按钮`);
+  speakText(`呼救将发出，取消请点击红色取消按钮`);
 
-  // 蜂鸣音（可选，忽略自动播放策略错误）
+  // 蜂鸣音
   beepAudio = new Audio('/sounds/beep.mp3');
   beepAudio.loop = true;
   beepAudio.play().catch(() => {});
@@ -232,7 +225,7 @@ const cancelEmergencyByUser = () => {
 const cancelEmergencyFinal = () => {
   clearEmergencyUI();  // 复用清理函数
   statusText.value = '已取消呼救';
-  speakText('紧急呼救已取消');
+  speakText('呼救已取消');
 };
 
 // 清理定时器
