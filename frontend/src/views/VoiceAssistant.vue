@@ -71,6 +71,9 @@ import { useRouter } from 'vue-router'
 import api from '@/api'
 import { levenshtein, calculateConfidence } from '@/utils/levenshtein'   // 模糊匹配
 import { generateWeatherAdvice } from '@/utils/weatherHelper'
+import { getCachedLocation, updateLocationCacheSilently } from '@/utils/location'  // 导入定位工具
+import { commonCities } from '@/utils/cityList'
+
 
 const router = useRouter()      //ref(初始值) 返回一个对象，通过 .value 访问/修改其值。V3直接用变量名就可以了
 // -- 响应式数据 需要在页面上显示 / 控制 UI 样式--Vue 只有把它们变成响应式变量，才能在变量变化时自动更新页面。---------------------
@@ -90,13 +93,13 @@ const healthRecords = ref([])   // 存储健康记录数据（用于体检指标
 // ---- 关键词词典：intent：意图分类。keywords：触发该意图的关键词列表。action 或 metricKey：匹配后要执行的操作标识。
 const commandDictionary = [
    // 吃药提醒
-  { intent: 'medicine', keywords: ['吃药', '药', '吃什么药', '今天吃什么药', '该吃什么药', '我的药'],
+  { intent: 'medicine', keywords: ['吃药', '药', '吃什么药', '今天吃什么药', '该吃什么药', '我的药', '该吃药了吗', '吃药时间到了吗', '药吃了吗', '今天吃啥药', '记得吃药', '提醒我吃药', '药在哪', '药怎么吃', '吃哪个药', '药量', '几片药', '饭前还是饭后'],
     action: 'medicine' },    
   // 天气查询
-  { intent: 'weather', keywords: ['天气', '温度', '冷不冷', '热不热', '下雨', '下雪', '多少度', '穿什么', '怎么样', '出门', '出行', '带伞'],
+  { intent: 'weather', keywords: ['天气', '温度', '冷不冷', '热不热', '下雨', '下雪', '多少度', '穿什么', '怎么样', '出门', '出行', '带伞', '今天天气咋样', '明天天气', '后天天气', '外面冷不冷', '外面下雨吗', '要不要带伞', '出门穿啥', '温度高不高', '天气好吗', '刮风吗', '雾大吗', '晴天阴天'],
     action: 'weather'},
   // 整体健康（反问）
-  { intent: 'generalHealth', keywords: ['身体', '体检结果', '身体状况', '怎么样', '还好吗', '好不好', '健康'],
+  { intent: 'generalHealth', keywords: ['身体', '体检结果', '身体状况', '怎么样', '还好吗', '好不好', '健康', '身体好吗', '身体怎么样', '最近身体怎么样', '我这身体还行吗', '我健康吗', '感觉如何', '身体舒服吗', '有没有毛病', '正常不正常', '血压高不高', '血糖正常吗'],
     action: 'generalHealth' },
   // 骨密度/身高体重/血糖/尿酸/血压/总胆固醇/正常心率七项常用体检指标
   { intent: 'metric', keywords: ['骨密度'],metricKey: 'boneDensity'},
@@ -341,31 +344,73 @@ const handleMedicine = async () => {
 // ------------------- 2. 天气查询指令 ------------------
 const handleWeather = async (text) => {
   try {
-    let city = '北京'
+    // 1. 解析用户输入中的城市名（至少两个汉字，可选“市”结尾）
+    const cityMatch = text.match(/([\u4e00-\u9fa5]{2,}市?)/);
+    let city = '';
     // \u4e00 是汉字“一”的 Unicode 码，\u9fa5 是汉字“龥”的码，这个区间覆盖了所有常用汉字,{2,}至少两个汉字，这是更标准、更可靠的 Unicode 写法，确保在所有环境下都能正确识别汉字。
-    const cityMatch = text.match(/([\u4e00-\u9fa5]{2,}市?)/)  // 匹配至少两个汉字，后面可能跟一个“市”字，并把这一整段捕获下来
-    if (cityMatch) {
-      // 如果匹配成功：返回一个数组，否则null。[0] 是完整匹配的内容，[1] 是第一个捕获组的内容（即城市名，可能带“市”）。
-      // replace 默认只替换第一个匹配。因为正则捕获的城市名可能带有市，调用天气API通常传入不带市的城市名，so需要把末尾的市字去掉。
-      city = cityMatch[1].replace('市', '')   
+    // if (cityMatch) {
+    //   // 匹配至少两个汉字，后面可能跟一个“市”字，并把这一整段捕获下来
+    //   // 如果匹配成功：返回一个数组，否则null。[0] 是完整匹配的内容，[1] 是第一个捕获组的内容（即城市名，可能带“市”）。
+    //   // replace 默认只替换第一个匹配。因为正则捕获的城市名可能带有市，调用天气API通常传入不带市的城市名，so需要把末尾的市字去掉。
+    //   city = cityMatch[1].replace('市', ''); // 去掉末尾的“市”字
+    // }
+     // 匹配所有连续的汉字（长度为2~4，覆盖绝大多数中国城市名）
+    const chineseWords = text.match(/[\u4e00-\u9fa5]{2,4}/g) || [];
+    for (const word of chineseWords) {
+      // 去掉末尾可能的“市”字，再检查是否在城市列表中
+      const candidate = word.replace(/市$/, '');
+      if (commonCities.has(candidate)) {
+        city = candidate;
+        break; // 只取第一个匹配到的城市名
+      }
     }
-    const res = await api.get('/weather/current', { params: { city } })
-    // const weatherData = res.data
-    const weatherData = res
+    // ---------- 第二步：判断是否为天气相关查询（用于无城市名时触发定位） ----------
+    // 扩展正则，覆盖老人常见问法
+    const isWeatherQuery = /天气|温度|冷不冷|热不热|下雨|下雪|多少度|穿什么|出门|带伞|刮风|雾/.test(text);
+    // 如果没有提取到城市名，且用户问的不是天气相关，则视为无效（理论上不会发生，因为意图匹配已确保是 weather）
+    if (!city && !isWeatherQuery) {
+      throw new Error('未能识别城市名，且问题与天气无关');
+    }
+
+
+    let weatherData = null; // 统一存储天气数据
+
     
-    const advice = generateWeatherAdvice(
-      weatherData.city,
-      weatherData.description,
-      weatherData.temperature
-    )
-    
-    assistantReply.value = advice
-    speak(assistantReply.value)
+    // 2. 根据是否有城市名，调用不同接口
+    if (city) {
+      // 用户明确说出了城市名 -> 调用城市查询接口
+      const res = await api.get('/weather/current', { params: { city } });
+      // { current: { city, description, temperature, humidity }, forecast: [...], yesterday: {...} }
+      weatherData = res;
+    } else {
+      // 用户未提供城市 -> 使用当前定位
+      // 获取缓存的经纬度
+      let cached = getCachedLocation();
+      if (!cached) {
+        // 缓存不存在，尝试静默重新获取
+        await updateLocationCacheSilently();
+        cached = getCachedLocation();
+        if (!cached) {
+          throw new Error('无法获取您的位置，请检查定位权限或手动输入城市');
+        }
+      }
+      const { latitude, longitude } = cached;
+      const res = await api.get('/weather/location', {
+        params: { lat: latitude, lon: longitude }
+      });
+      weatherData = res; // 同样假设返回结构一致
+    }
+
+    // 3. 生成建议文案
+    const advice = generateWeatherAdvice(weatherData);
+    assistantReply.value = advice;
+    speak(assistantReply.value);
   } catch (error) {
-    assistantReply.value = '天气信息获取失败，请稍后再试'
-    speak(assistantReply.value)
+    console.error('天气查询失败:', error);
+    assistantReply.value = '天气信息获取失败，请稍后再试';
+    speak(assistantReply.value);
   }
-}
+};
 
 // ------------------- 3. 单指标健康查询 metricKey匹配查询指标   -----------
 // possibleTitles 要找的关键词列表 recordsToSearch 要搜索的记录列表  matchedRecord 最终找到的那条记录

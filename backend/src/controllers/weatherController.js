@@ -93,7 +93,6 @@ const getCurrentWeather = async (req, res, next) => {
  *
  */
 
-// ... 原有代码保留，新增以下内容
 
 /**
  * 根据经纬度获取聚合天气数据（实时 + 3天预报 + 昨日历史）
