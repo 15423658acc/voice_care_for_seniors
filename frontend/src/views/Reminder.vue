@@ -11,8 +11,7 @@
     <div v-if="reminders.length === 0" class="empty">今日暂无提醒</div>
     <ul class="reminder-list">
       <li v-for="item in reminders" :key="item.id" class="reminder-item">
-        <!-- <span class="time">{{ item.time }}</span> -->
-         <span class="time">{{ formatTime(item) }}</span>
+        <span class="time">{{ formatTime(item) }}</span>
         <span class="medicine">{{ item.medicine }}</span>
         <span class="status" :class="{ taken: item.taken }">
           {{ item.taken ? '已吃' : '待提醒' }}
@@ -35,36 +34,25 @@ import { usePush } from '@/composables/usePush'
 const reminders = ref([])
 const { isSubscribed, subscribeUser } = usePush()
 const pushSubscribed = ref(false)
-const speechEnabled = ref(false)   // 语音是否已激活
+const speechEnabled = ref(false)
 
-
-
-// 格式化时间，只显示 HH:MM（不显示秒）
+// 格式化时间
 const formatTime = (reminder) => {
-  // 优先使用数据库中的 time 字段（如果有且格式为 HH:MM）
   if (reminder.time && /^\d{2}:\d{2}$/.test(reminder.time)) {
-    return reminder.time;
+    return reminder.time
   }
-  // 否则从 remindAt 中提取小时和分钟
   if (reminder.remindAt) {
-    const date = new Date(reminder.remindAt);
-    // 提取小时和分钟，确保两位数（不足两位自动补零）
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    const date = new Date(reminder.remindAt)
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${hours}:${minutes}`
   }
-  // 如果以上方法都失败，返回空字符串
-  return '';
-};
-
-
-
-
+  return ''
+}
 
 // ========== 数据获取 ==========
 const fetchReminders = async () => {
   try {
-    // 注意：这里路径改为 /reminders/today（假设 api 实例 baseURL 已包含 /api）
     const res = await api.get('/reminders/today')
     reminders.value = res
   } catch (error) {
@@ -74,33 +62,48 @@ const fetchReminders = async () => {
 
 // ========== 推送订阅 ==========
 const enablePush = async () => {
+  if (!speechEnabled.value) {
+    enableSpeech()
+  }
   await subscribeUser()
   pushSubscribed.value = true
-  // 订阅成功后立即刷新列表
   await fetchReminders()
 }
 
-// ========== 语音播报 ==========
-const speak = (text) => {
+// ========== ✅ 修复：语音播报（支持循环 N 次）==========
+const speak = (text, repeatCount = 3) => {
   if (!speechEnabled.value) {
     console.warn('语音未激活，无法播报')
     return
   }
-  if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = 'zh-CN'
-    utterance.rate = 0.9
-    utterance.pitch = 1.0
-    utterance.volume = 1
-    window.speechSynthesis.speak(utterance)
-  } else {
-    console.warn('不支持语音合成')
+
+  // 先停止之前的播报，防止重叠
+  window.speechSynthesis.cancel()
+
+  let count = 0
+
+  function play() {
+    if (count >= repeatCount) return
+
+    const u = new SpeechSynthesisUtterance(text)
+    u.lang = 'zh-CN'
+    u.rate = 0.9
+    u.pitch = 1.0
+    u.volume = 1
+
+    u.onend = () => {
+      count++
+      play()
+    }
+
+    window.speechSynthesis.speak(u)
   }
+
+  play()
 }
 
-// 激活语音权限（需要用户手势）
+// 激活语音
 const enableSpeech = () => {
-  // 播放一段空语音，激活浏览器权限
   const utterance = new SpeechSynthesisUtterance(' ')
   utterance.volume = 0
   window.speechSynthesis.speak(utterance)
@@ -111,19 +114,20 @@ const enableSpeech = () => {
 // ========== 处理推送消息 ==========
 const handleReminderArrived = (event) => {
   const { body } = event.detail
-  speak(`提醒：${body}`)    // 播报语音
-  fetchReminders()          // 刷新列表
+  // ✅ 这里播报 3 次（你可以改成 5 / 10 / Infinity 无限循环）
+  speak(`提醒：${body}`, 3)
+  fetchReminders()
 }
 
 // ========== 生命周期 ==========
 onMounted(() => {
   fetchReminders()
-  // 监听来自 main.js 的推送消息事件
   window.addEventListener('reminder-arrived', handleReminderArrived)
 })
 
 onUnmounted(() => {
   window.removeEventListener('reminder-arrived', handleReminderArrived)
+  window.speechSynthesis.cancel()
 })
 </script>
 

@@ -70,7 +70,6 @@ const getCurrentPosition = async () => {
  * @returns {Promise<{latitude: number, longitude: number}>}
  */
 // utils/location.js 中的 getTencentIPLocation 替换为 JSONP 版本
-// utils/location.js 中的 getTencentIPLocation 替换为 JSONP 版本
 const getTencentIPLocation = () => {
   return new Promise((resolve, reject) => {
     const callbackName = 'jsonp_callback_' + Date.now();

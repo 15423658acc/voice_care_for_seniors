@@ -45,12 +45,6 @@ const routes = [
     meta: { title: '语音助手', requiresAuth: false }
   },
   {
-    path: '/antifraud',
-    name: 'antifraud',
-    component: () => import('../views/AntiFraud.vue'),
-    meta: { title: '反诈骗', requiresAuth: false }
-  },
-  {
     path: '/healthRecords',
     name: 'healthRecords',
     component: () => import('../views/HealthRecords.vue'),

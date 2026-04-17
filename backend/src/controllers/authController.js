@@ -415,6 +415,15 @@ const forgotPassword = async (req, res, next) => {
         const { rawToken, hashedToken } = generateResetToken()
         // 计算过期时间：当前时间戳加上 1 小时（60*60*1000 毫秒），得到 Date 对象。
         const expiry = new Date(Date.now() + 60 * 60 * 1000) // 1小时过期
+        console.log()
+        // 将前端传来的本地时间字符串（如 "2026-04-04T09:50"）转换为正确的 UTC Date 对象
+        // 前端时间是中国时区（UTC+8）
+//         function parseLocalToUTC(localDateTimeStr) {
+//             if (!localDateTimeStr) return null;
+//             // 方法：补上 +08:00 时区后缀，然后 new Date
+//             const dateWithTZ = new Date(localDateTimeStr + '+08:00');
+//             return dateWithTZ;
+//         }
 
         // 存储哈希和过期时间
         await prisma.user.update({

@@ -34,7 +34,6 @@
     <h1 class="welcome">老友助手</h1>
     <div class="grid">
       <router-link to="/reminder" class="card reminder">💊 吃药提醒</router-link>
-      <router-link to="/antifraud" class="card fraud">🛡️ 防诈骗</router-link>
       <router-link to="/weather" class="card weather">☀️ 天气</router-link>
       <router-link to="/voiceAssistant" class="card voice">🎤 语音助手</router-link>
       <router-link to="/healthRecords" class="card health">📋 健康记录</router-link>

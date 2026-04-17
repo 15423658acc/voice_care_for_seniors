@@ -65,6 +65,10 @@ model Reminder {
   medicine String // 药品名
   time     String // 提醒时间（HH:mm格式）
 
+  // 新增字段 ：实现循环提醒
+  repeatType   String?   @default("none") @map("repeat_type") // none / daily / every_other_day / weekly
+  nextRemindAt DateTime? @map("next_remind_at") // 下一次应提醒的时间（UTC）
+
   // 关联关系：提醒属于某个用户
   user User @relation(fields: [userId], references: [id])
 
@@ -74,9 +78,9 @@ model Reminder {
 // 订阅存储模型
 model PushSubscription {
   id        Int      @id @default(autoincrement())
-  endpoint  String   @unique @db.VarChar(500) // 添加 @db.Text 以支持长 URL
-  p256dh    String
-  auth      String
+  endpoint  String   @unique @db.VarChar(500) // 添加 @db.Text 以支持长 URL，用户设备的推送链接
+  p256dh    String // 安全密钥
+  auth      String // 安全密钥
   userId    Int? // 可选关联用户
   user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())

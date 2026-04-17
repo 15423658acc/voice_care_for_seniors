@@ -9,14 +9,17 @@
     </div>
 
     <table v-if="reminders.length">
+      <!-- 表头增加“重复”列 -->
       <thead>
-        <tr><th>标题</th><th>药品</th><th>提醒时间</th><th>状态</th><th>操作</th></tr>
+        <tr><th>标题</th><th>药品</th><th>提醒时间</th><th>重复</th><th>状态</th><th>操作</th>
+        </tr>
       </thead>
       <tbody>
         <tr v-for="r in reminders" :key="r.id">
           <td>{{ r.title }}</td>
           <td>{{ r.medicine }}</td>
           <td>{{ formatDateTime(r.remindAt) }}</td>
+          <td>{{ repeatTypeText(r.repeatType) }}</td>
           <td>{{ r.taken ? '已吃' : '待提醒' }}</td>
           <td>
             <button @click="editReminder(r)">编辑</button>
@@ -48,6 +51,16 @@
             <label>提醒时间 *</label>
             <input type="datetime-local" v-model="form.remindAt" required />
           </div>
+          <!-- 新增：重复类型下拉框 -->
+          <div class="form-group">
+            <label>重复规则</label>
+            <select v-model="form.repeatType">
+              <option value="none">不重复（单次）</option>
+              <option value="daily">每日一次</option>
+              <option value="every_other_day">隔日一次</option>
+              <option value="weekly">每周一次</option>
+            </select>
+          </div>
           <div class="form-buttons">
             <button type="submit">保存</button>
             <button type="button" @click="closeModal">取消</button>
@@ -72,22 +85,28 @@ const form = ref({
   title: '',
   medicine: '',
   description: '',
-  remindAt: ''
+  remindAt: '',
+  repeatType: 'none'     // 新增字段，默认不重复
 })
+
+// 辅助函数：重复类型转中文
+const repeatTypeText = (type) => {
+  const map = {
+    none: '单次',
+    daily: '每日',
+    every_other_day: '隔日',
+    weekly: '每周'
+  }
+  return map[type] || '单次'
+}
 
 const fetchElders = async () => {
   try {
-    // const res = await api.get('/users?role=elder')
-    const res = await api.get('/users/elders')  // 修改为获取当前子女绑定的老人列表
-    // console.log('fetchElders 返回的 res:', res)
+    const res = await api.get('/users/elders')
     elders.value = res
-  //   if (elders.value.length) selectedUserId.value = elders.value[0].id
-  // } catch (error) {
-  //   console.error('获取老人列表失败', error)
-  // }
-  if (elders.value.length) {
+    if (elders.value.length) {
       selectedUserId.value = elders.value[0].id
-      await fetchReminders()   // 添加
+      await fetchReminders()
     }
   } catch (error) {
     console.error('获取老人列表失败', error)
@@ -106,7 +125,14 @@ const fetchReminders = async () => {
 
 const openAddModal = () => {
   isEdit.value = false
-  form.value = { id: null, title: '', medicine: '', description: '', remindAt: '' }
+  form.value = {
+    id: null,
+    title: '',
+    medicine: '',
+    description: '',
+    remindAt: '',
+    repeatType: 'none'
+  }
   showModal.value = true
 }
 
@@ -114,29 +140,26 @@ const editReminder = (reminder) => {
   isEdit.value = true
   form.value = {
     ...reminder,
-    remindAt: reminder.remindAt ? reminder.remindAt.slice(0, 16) : '' // datetime-local 格式
+    remindAt: reminder.remindAt ? reminder.remindAt.slice(0, 16) : '',
+    repeatType: reminder.repeatType || 'none'
   }
   showModal.value = true
 }
 
 const submitReminder = async () => {
-  // console.log('提交的数据:', form.value);
   try {
+    const payload = {
+      title: form.value.title,
+      medicine: form.value.medicine,
+      description: form.value.description,
+      remindAt: form.value.remindAt,
+      repeatType: form.value.repeatType   // 新增
+    }
     if (isEdit.value) {
-      await api.put(`/reminders/${form.value.id}`, {
-        title: form.value.title,
-        medicine: form.value.medicine,
-        description: form.value.description,
-        remindAt: form.value.remindAt
-      })
+      await api.put(`/reminders/${form.value.id}`, payload)
     } else {
-      await api.post('/reminders', {
-        title: form.value.title,
-        medicine: form.value.medicine,
-        description: form.value.description,
-        remindAt: form.value.remindAt,
-        userId: selectedUserId.value
-      })
+      payload.userId = selectedUserId.value
+      await api.post('/reminders', payload)
     }
     closeModal()
     fetchReminders()
@@ -170,5 +193,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 样式可自行补充 */
+/* 样式保持不变，略 */
 </style>
