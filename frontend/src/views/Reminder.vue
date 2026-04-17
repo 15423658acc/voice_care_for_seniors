@@ -2,26 +2,31 @@
   <div class="reminder-container">
     <h1 class="page-title">💊 吃药提醒</h1>
 
-    <!-- 语音激活按钮（未激活时显示） -->
-    <button v-if="!speechEnabled" @click="enableSpeech" class="voice-activate-btn">
-      🔊 开启语音播报
-    </button>
-
     <!-- 提醒列表 -->
     <div v-if="reminders.length === 0" class="empty">今日暂无提醒</div>
     <ul class="reminder-list">
       <li v-for="item in reminders" :key="item.id" class="reminder-item">
         <span class="time">{{ formatTime(item) }}</span>
         <span class="medicine">{{ item.medicine }}</span>
+        <!-- 周期标签（如有） -->
+        <span v-if="item.repeatType && item.repeatType !== 'none'" class="repeat-badge">
+          {{ repeatTypeText(item.repeatType) }}
+        </span>
         <span class="status" :class="{ taken: item.taken }">
           {{ item.taken ? '已吃' : '待提醒' }}
         </span>
       </li>
     </ul>
 
-    <!-- 推送订阅按钮 -->
+    <!-- ========== 按钮顺序调整：推送按钮在上，语音按钮在下 ========== -->
+    <!-- 1. 推送订阅按钮（高对比度绿色大按钮） -->
     <button v-if="!pushSubscribed" @click="enablePush" class="push-btn">
-      开启推送提醒
+      🔔 开启推送提醒
+    </button>
+
+    <!-- 2. 语音激活按钮（放在推送按钮下方） -->
+    <button v-if="!speechEnabled" @click="enableSpeech" class="voice-activate-btn">
+      🔊 开启语音播报
     </button>
   </div>
 </template>
@@ -35,6 +40,16 @@ const reminders = ref([])
 const { isSubscribed, subscribeUser } = usePush()
 const pushSubscribed = ref(false)
 const speechEnabled = ref(false)
+
+// 重复类型转中文（用于标签）
+const repeatTypeText = (type) => {
+  const map = {
+    daily: '每日',
+    every_other_day: '隔日',
+    weekly: '每周'
+  }
+  return map[type] || ''
+}
 
 // 格式化时间
 const formatTime = (reminder) => {
@@ -70,35 +85,27 @@ const enablePush = async () => {
   await fetchReminders()
 }
 
-// ========== ✅ 修复：语音播报（支持循环 N 次）==========
+// ========== 语音播报（支持循环 N 次）==========
 const speak = (text, repeatCount = 3) => {
   if (!speechEnabled.value) {
     console.warn('语音未激活，无法播报')
     return
   }
-
-  // 先停止之前的播报，防止重叠
   window.speechSynthesis.cancel()
-
   let count = 0
-
   function play() {
     if (count >= repeatCount) return
-
     const u = new SpeechSynthesisUtterance(text)
     u.lang = 'zh-CN'
     u.rate = 0.9
     u.pitch = 1.0
     u.volume = 1
-
     u.onend = () => {
       count++
       play()
     }
-
     window.speechSynthesis.speak(u)
   }
-
   play()
 }
 
@@ -114,7 +121,6 @@ const enableSpeech = () => {
 // ========== 处理推送消息 ==========
 const handleReminderArrived = (event) => {
   const { body } = event.detail
-  // ✅ 这里播报 3 次（你可以改成 5 / 10 / Infinity 无限循环）
   speak(`提醒：${body}`, 3)
   fetchReminders()
 }
@@ -132,71 +138,150 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ========== 全局字体：至少 20px，移动端友好 ========== */
 .reminder-container {
   padding: 1rem;
+  font-size: 20px;           /* 基础字体 20px */
 }
+
+/* 标题字体更大 */
 .page-title {
-  font-size: 2rem;
+  font-size: 28px;           /* 符合 24px 以上要求 */
   text-align: center;
   margin-bottom: 2rem;
+  font-weight: 500;
 }
-.voice-activate-btn {
-  background-color: #ff9800;
-  color: white;
-  font-size: 1.4rem;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 2rem;
-  margin-bottom: 1rem;
-  cursor: pointer;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+
+/* 空状态提示 */
+.empty {
+  text-align: center;
+  font-size: 20px;
+  color: #666;
+  padding: 2rem;
 }
+
+/* ========== 提醒列表样式 ========== */
 .reminder-list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
+
 .reminder-item {
-  font-size: 1.6rem;
+  font-size: 20px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #ccc;
+  justify-content: space-between;
+  padding: 1rem 0.5rem;
+  border-bottom: 1px solid #eee;
+  flex-wrap: wrap;          /* 移动端换行适配 */
+  gap: 0.5rem;
 }
+
+/* 时间 */
 .time {
   font-weight: bold;
   color: #333;
+  min-width: 80px;
 }
+
+/* 药品名：加粗 + 深色 #2c3e50 */
 .medicine {
   flex: 1;
-  margin-left: 1rem;
+  margin-left: 0.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+  word-break: break-word;
 }
+
+/* 周期标签 */
+.repeat-badge {
+  background-color: #e0e0e0;
+  color: #555;
+  font-size: 0.75rem;       /* 相对 20px 的 15px */
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  white-space: nowrap;
+}
+
+/* 状态标签 */
 .status {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 1.5rem;
   background-color: #f0f0f0;
+  font-size: 0.9rem;
 }
 .status.taken {
   background-color: #4caf50;
   color: white;
 }
+
+/* ========== 按钮样式（移动端触控优化） ========== */
+/* 推送按钮：高对比度绿色，大圆角，高度≥56px */
 .push-btn {
-  background-color: #2196f3;
+  background-color: #4caf50;    /* 高对比度绿色 */
   color: white;
-  font-size: 1.6rem;
-  padding: 1.5rem;
+  font-size: 1.2rem;           /* 相对 20px 的 24px */
+  font-weight: bold;
+  padding: 0.8rem 1.5rem;
   border: none;
-  border-radius: 1rem;
+  border-radius: 2rem;          /* 大圆角 */
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   cursor: pointer;
+  transition: background-color 0.2s;
+  min-height: 56px;             /* 符合移动端触控标准 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.empty {
-  text-align: center;
-  font-size: 1.6rem;
-  color: #666;
-  padding: 2rem;
+.push-btn:active {
+  background-color: #388e3c;
+}
+
+/* 语音按钮：放在推送按钮下方，样式稍低调但同样触控友好 */
+.voice-activate-btn {
+  background-color: #ff9800;
+  color: white;
+  font-size: 1.2rem;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 2rem;
+  width: 100%;
+  margin-top: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.voice-activate-btn:active {
+  background-color: #f57c00;
+}
+
+/* ========== 移动端额外适配 ========== */
+@media (max-width: 480px) {
+  .reminder-container {
+    padding: 0.75rem;
+  }
+  .reminder-item {
+    font-size: 18px;       /* 最小 18px，但仍接近 20px 要求 */
+    padding: 0.8rem 0.3rem;
+  }
+  .time {
+    min-width: 70px;
+  }
+  .medicine {
+    font-size: 18px;
+  }
+  .repeat-badge {
+    font-size: 0.7rem;
+  }
+  /* 确保按钮高度仍然足够 */
+  .push-btn, .voice-activate-btn {
+    min-height: 52px;      /* 稍小但仍在 48px 以上，可接受 */
+    font-size: 1.1rem;
+  }
 }
 </style>

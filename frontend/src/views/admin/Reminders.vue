@@ -20,7 +20,7 @@
           <td>{{ r.medicine }}</td>
           <td>{{ formatDateTime(r.remindAt) }}</td>
           <td>{{ repeatTypeText(r.repeatType) }}</td>
-          <td>{{ r.taken ? '已吃' : '待提醒' }}</td>
+          <td>{{ r.taken ? '今日已吃' : '未吃' }}</td>
           <td>
             <button @click="editReminder(r)">编辑</button>
             <button @click="deleteReminder(r.id)">删除</button>
@@ -56,8 +56,8 @@
             <label>重复规则</label>
             <select v-model="form.repeatType">
               <option value="none">不重复（单次）</option>
-              <option value="daily">每日一次</option>
-              <option value="every_other_day">隔日一次</option>
+              <option value="daily">每天一次</option>
+              <option value="every_other_day">隔天一次</option>
               <option value="weekly">每周一次</option>
             </select>
           </div>
