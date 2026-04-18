@@ -12,13 +12,14 @@
         <span v-if="item.repeatType && item.repeatType !== 'none'" class="repeat-badge">
           {{ repeatTypeText(item.repeatType) }}
         </span>
-        <span class="status" :class="{ taken: item.taken }">
-          {{ item.taken ? '已吃' : '待提醒' }}
+        <!-- <span class="status" :class="{ taken: item.taken }"> {{ item.taken ? '已吃' : '待提醒' }}</span> -->
+        <span class="status" :class="getStatusClass(item)">
+          {{ getStatusText(item) }}
         </span>
       </li>
     </ul>
 
-    <!-- ========== 按钮顺序调整：推送按钮在上，语音按钮在下 ========== -->
+    <!-- == 自动开启推送：播报前自动开启播报，播报后重新调用后端接口 /reminders/today，获取最新的提醒数据。 ========== -->
     <!-- 1. 推送订阅按钮（高对比度绿色大按钮） -->
     <button v-if="!pushSubscribed" @click="enablePush" class="push-btn">
       🔔 点击打开推送提醒
@@ -102,7 +103,7 @@ const enablePush = async () => {
   await fetchReminders()
 }
 
-// ========== 语音播报（支持循环 N 次）==========
+// ========== 语音播报（支持循环多次）==========
 const speak = (text, repeatCount = 3) => {
   if (!speechEnabled.value) {
     console.warn('语音未激活，无法播报')
@@ -148,6 +149,37 @@ const handleReminderArrived = (event) => {
   fetchReminders()
 }
 
+// 处理来自 Service Worker 的消息（专门处理刷新列表）
+const handleServiceWorkerMessage = (event) => {
+  if (event.data.type === 'REFRESH_LIST') {
+    console.log('收到刷新列表信号，重新获取提醒')
+    fetchReminders()
+  }
+}
+
+// 将已过期但未成功推送的提醒标记为“提醒失败”并显示红色
+// 获取状态文本
+const getStatusText = (item) => {
+  if (item.taken) return '已吃'
+  if (isReminderFailed(item)) return '提醒失败'
+  return '待提醒'
+}
+// 获取状态样式类
+const getStatusClass = (item) => {
+  if (item.taken) return 'taken'
+  if (isReminderFailed(item)) return 'failure'
+  return ''
+}
+// 判断是否为提醒失败（未吃且提醒时间已过）
+const isReminderFailed = (item) => {
+  if (item.taken) return false
+  const remindTime = new Date(item.nextRemindAt)
+  const now = new Date()
+  return remindTime < now
+}
+
+
+
 // ========== 生命周期 ==========
 // onMounted(() => {
 //   fetchReminders()
@@ -158,11 +190,19 @@ onMounted(async () => {
   // 让后面的异步任务执行完，再执行下一行代码。
   await restorePushAndSpeech()   // 执行恢复状态，等待它完成
   await fetchReminders()         // 上一步完成后，才执行获取提醒，再等待它完成
+    // 监听 Service Worker 消息（用于刷新列表）
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage)
+  }
   // 最后才执行监听事件:推送提醒
   window.addEventListener('reminder-arrived', handleReminderArrived)
+  
 })
 
 onUnmounted(() => {
+  if (navigator.serviceWorker) {
+    navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage)
+  }
   window.removeEventListener('reminder-arrived', handleReminderArrived)
   window.speechSynthesis.cancel()
 })
@@ -314,5 +354,11 @@ onUnmounted(() => {
     min-height: 52px;      /* 稍小但仍在 48px 以上，可接受 */
     font-size: 1.1rem;
   }
+}
+
+/* 添加红色失败状态样式 */
+.status.failure {
+  background-color: #f44336;  /* 红色背景 */
+  color: white;
 }
 </style>
