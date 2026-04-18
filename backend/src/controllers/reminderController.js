@@ -137,6 +137,15 @@ const checkReminders = async () => {
     // 没有需要提醒的直接返回
     if (reminders.length === 0) return
 
+    /*
+    * PushSubscription的存储逻辑：
+    * PushSubscription 表的每一条记录对应 一个浏览器/设备的一次推送授权。
+    * 用户点击前端的 “开启推送提醒” 按钮（Reminder.vue 中的 enablePush）
+    * ---前端调用浏览器的 Push API 获取订阅对象（包含 endpoint、keys.p256dh、keys.auth）
+    * ---前端将订阅对象通过 API发送给后端---后端接收后存入 push_subscriptions 表。
+    * 每次推送都会存新记录吗？	不会，只存订阅端点，推送历史不记录。
+    */
+
     // 获取所有已订阅推送的前端客户端
     const subscriptions = await prisma.pushSubscription.findMany()
 
@@ -181,18 +190,67 @@ const checkReminders = async () => {
 
 
 // 获取单个提醒
+// const getTodayReminders = async (req, res, next) => {
+//     try {
+//         if (req.user.role !== 'elder') {
+//             return res.status(403).json({ code: 403, msg: '只有老人可以查看自己的提醒' })
+//         }
+//         const reminders = await prisma.reminder.findMany({
+//             where: { userId: req.user.id },
+//             orderBy: { nextRemindAt: 'asc' }
+//         })
+//         res.json({ code: 200, data: reminders })
+//     } catch (error) {
+//         next(error)
+//     }
+// }
+
+/**
+ *
+ * 为什么创建时 remindAt 和 nextRemindAt 相同？
+ * remindAt 是原始设定时间（用户期望的首次提醒时间），作为历史记录保留，便于将来查看“原本应该几点提醒”。
+ * nextRemindAt 是动态字段，用于表示“下一次应该推送提醒的时间”。
+ * 在提醒刚创建时，第一次提醒还没发生，所以 两者相等是合理的！！！
+ */
+
+
+// 获取当天需要提醒且未吃的提醒（老人专用）
 const getTodayReminders = async (req, res, next) => {
     try {
+        // 权限校验：仅老人可查看自己的今日提醒
         if (req.user.role !== 'elder') {
             return res.status(403).json({ code: 403, msg: '只有老人可以查看自己的提醒' })
         }
+
+        // 获取当前北京时间（正确获取 YYYY-MM-DD 格式）
+        const now = new Date();
+        const beijingTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+
+        const year = beijingTime.getFullYear();
+        const month = String(beijingTime.getMonth() + 1).padStart(2, '0');
+        const day = String(beijingTime.getDate()).padStart(2, '0');
+        const beijingDateStr = `${year}-${month}-${day}`; // 正确格式：2025-12-19
+
+        // 构造北京时间当天起止时间
+        const startBeijing = new Date(beijingDateStr + 'T00:00:00+08:00');
+        const endBeijing = new Date(beijingDateStr + 'T23:59:59.999+08:00');
+
+        //  数据库查询（逻辑正确，只修复了日期）
         const reminders = await prisma.reminder.findMany({
-            where: { userId: req.user.id },
-            orderBy: { remindAt: 'asc' }
-        })
-        res.json({ code: 200, data: reminders })
+            where: {
+                userId: req.user.id,
+                taken: false,
+                nextRemindAt: {
+                    gte: startBeijing,
+                    lte: endBeijing
+                }
+            },
+            orderBy: { nextRemindAt: 'asc' }
+        });
+
+        res.json({ code: 200, data: reminders });
     } catch (error) {
-        next(error)
+        next(error);
     }
 }
 
@@ -235,7 +293,7 @@ const getReminders = async (req, res, next) => {
 
         const reminders = await prisma.reminder.findMany({
             where:  whereCondition ,  //使用构建好的条件
-            orderBy: { remindAt: 'asc' }
+            orderBy: { nextRemindAt: 'asc' }
         })
         res.json({ code: 200, data: reminders })
     } catch (error) {
@@ -382,6 +440,7 @@ const updateReminder = async (req, res, next) => {
             }
         }
 
+        console.log("更新后：",updateData)
         const updated = await prisma.reminder.update({
             where: { id: parseInt(id) },
             data: updateData

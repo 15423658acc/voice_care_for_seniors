@@ -21,7 +21,7 @@
     <!-- ========== 按钮顺序调整：推送按钮在上，语音按钮在下 ========== -->
     <!-- 1. 推送订阅按钮（高对比度绿色大按钮） -->
     <button v-if="!pushSubscribed" @click="enablePush" class="push-btn">
-      🔔 开启推送提醒
+      🔔 点击打开推送提醒
     </button>
 
     <!-- 2. 语音激活按钮（放在推送按钮下方） -->
@@ -69,6 +69,7 @@ const formatTime = (reminder) => {
 const fetchReminders = async () => {
   try {
     const res = await api.get('/reminders/today')
+    console.log('原始返回顺序:', res.map(r => r.time))
     reminders.value = res
   } catch (error) {
     console.error('获取提醒失败', error)
