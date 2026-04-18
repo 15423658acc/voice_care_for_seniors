@@ -37,9 +37,25 @@ import api from '@/api'
 import { usePush } from '@/composables/usePush'
 
 const reminders = ref([])
-const { isSubscribed, subscribeUser } = usePush()
+const { isSubscribed, subscribeUser, checkExistingSubscription  } = usePush()
 const pushSubscribed = ref(false)
 const speechEnabled = ref(false)
+
+// 恢复语音和推送状态
+const restorePushAndSpeech = async () => {
+  // 1. 检查是否已有有效的推送订阅
+  const hasSub = await checkExistingSubscription()
+  if (hasSub) {
+    pushSubscribed.value = true
+    // 自动激活语音（如果不曾激活）
+    if (!speechEnabled.value) {
+      enableSpeech()
+    }
+    console.log('已恢复推送订阅状态')
+  } else {
+    pushSubscribed.value = false
+  }
+}
 
 // 重复类型转中文（用于标签）
 const repeatTypeText = (type) => {
@@ -121,14 +137,28 @@ const enableSpeech = () => {
 
 // ========== 处理推送消息 ==========
 const handleReminderArrived = (event) => {
-  const { body } = event.detail
-  speak(`提醒：${body}`, 3)
+  // const { body } = event.detail
+  // speak(`提醒：${body}`, 3)
+  // fetchReminders()
+  const { body, refresh } = event.detail || {}
+  if (body) {
+    speak(`提醒：${body}`, 3)
+  }
+  // 无论什么推送，都刷新列表（保证数据最新）
   fetchReminders()
 }
 
 // ========== 生命周期 ==========
-onMounted(() => {
-  fetchReminders()
+// onMounted(() => {
+//   fetchReminders()
+//   window.addEventListener('reminder-arrived', handleReminderArrived)
+// })
+// 把回调函数声明为异步函数,await等待一个Promise（异步任务） 完成后再往下走：一个函数里可以写无数个 await，它们会按顺序排队执行，一个做完再做下一个，只有异步函数（async）内部才能用 await
+onMounted(async () => {
+  // 让后面的异步任务执行完，再执行下一行代码。
+  await restorePushAndSpeech()   // 执行恢复状态，等待它完成
+  await fetchReminders()         // 上一步完成后，才执行获取提醒，再等待它完成
+  // 最后才执行监听事件:推送提醒
   window.addEventListener('reminder-arrived', handleReminderArrived)
 })
 
