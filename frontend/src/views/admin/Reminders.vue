@@ -18,7 +18,15 @@
         <tr v-for="r in reminders" :key="r.id">
           <td>{{ r.title }}</td>
           <td>{{ r.medicine }}</td>
-          <td>{{ formatDateTime(r.remindAt) }}</td>
+          <!-- <td>{{ formatDateTime(r.remindAt) }}</td> -->
+          <td class="time-cell">
+            <div class="main-time" @click="quickEditTime(r)">
+              {{ formatMainTime(r) }}
+            </div>
+            <div class="next-time"">
+              下次提醒时间: {{ formatNextTime(r.nextRemindAt) }}
+            </div>
+          </td>
           <td>{{ repeatTypeText(r.repeatType) }}</td>
           <td>{{ r.taken ? '今日已吃' : '未吃' }}</td>
           <td>
@@ -123,6 +131,33 @@ const fetchReminders = async () => {
   }
 }
 
+
+// 新增：子女端优化交互体验====================
+// 格式化主行：周期类型 + 时间（HH:MM）
+const formatMainTime = (reminder) => {
+  const time = reminder.time || (reminder.remindAt ? new Date(reminder.remindAt).toLocaleTimeString('zh-CN', { hour12: false }).slice(0,5) : '')
+  const repeatMap = { none: '单次', daily: '每日', every_other_day: '隔日', weekly: '每周' }
+  const repeatText = repeatMap[reminder.repeatType] || ''
+  return `${repeatText} ${time}`.trim()
+}
+// 格式化副行：下次提醒时间（MM/DD HH:MM）
+const formatNextTime = (nextRemindAt) => {
+  if (!nextRemindAt) return '暂无'
+  const d = new Date(nextRemindAt)
+  const month = (d.getMonth() + 1).toString().padStart(2,'0')
+  const day = d.getDate().toString().padStart(2,'0')
+  const hours = d.getHours().toString().padStart(2,'0')
+  const mins = d.getMinutes().toString().padStart(2,'0')
+  return `${month}/${day} ${hours}:${mins}`
+}
+// 快速编辑（点击主行）
+const quickEditTime = (reminder) => {
+  // 复用已有的 editReminder 方法，它会打开模态框并填充数据
+  editReminder(reminder)
+}
+// 新增结束================================
+
+
 const openAddModal = () => {
   isEdit.value = false
   form.value = {
@@ -193,5 +228,32 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 样式保持不变，略 */
+/* ========== 子女端优化交互体验 ========== */
+.time-cell {
+  cursor: pointer;
+  user-select: none;
+}
+.main-time {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2c3e50;
+  padding: 6px 0;
+}
+.main-time:active {
+  background-color: #f0f0f0;
+}
+.next-time {
+  font-size: 0.9rem;
+  color: #666;
+  padding: 4px 0;
+}
+.next-time:active {
+  background-color: #f5f5f5;
+}
+/* 确保点击区域足够大，移动端友好 */
+@media (max-width: 600px) {
+  .main-time, .next-time {
+    padding: 8px 0;
+  }
+}
 </style>
