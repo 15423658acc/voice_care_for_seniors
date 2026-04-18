@@ -98,7 +98,9 @@ const enablePush = async () => {
   if (!speechEnabled.value) {
     enableSpeech()
   }
-  await subscribeUser()
+  const user = JSON.parse(localStorage.getItem('user'))
+  await subscribeUser(user.id, user.role)   // 传入用户ID和角色
+  // await subscribeUser()
   pushSubscribed.value = true
   await fetchReminders()
 }

@@ -78,13 +78,16 @@ model Reminder {
 // 订阅存储模型
 model PushSubscription {
   id        Int      @id @default(autoincrement())
-  endpoint  String   @unique @db.VarChar(500) // 添加 @db.Text 以支持长 URL，用户设备的推送链接
+  endpoint  String   @db.VarChar(500) // 添加 @db.Text 以支持长 URL，用户设备的推送链接
   p256dh    String // 安全密钥
   auth      String // 安全密钥
   userId    Int? // 可选关联用户
+  role      String // 新增】角色：'elder' 或 'child'，用于区分订阅用途
   user      User?    @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
 
+  // 【新增】唯一约束：同一用户在同一设备上的订阅唯一
+  @@unique([endpoint, userId])
   @@map("push_subscriptions")
 }
 

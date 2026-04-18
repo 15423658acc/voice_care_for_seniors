@@ -22,7 +22,7 @@ export function usePush() {
   }
 
   // 订阅推送（用户主动点击时调用）
-  async function subscribeUser() {
+/*   async function subscribeUser() {
     try {
       const registration = await navigator.serviceWorker.ready
       let sub = await registration.pushManager.getSubscription()
@@ -45,7 +45,41 @@ export function usePush() {
       console.error('订阅推送失败', err)
       throw err
     }
+  } */
+
+    // 修改：订阅时携带 userId 和 role
+      async function subscribeUser(userId, role) {  // 新增参数
+    try {
+      const registration = await navigator.serviceWorker.ready
+      let sub = await registration.pushManager.getSubscription()
+      if (!sub) {
+        const convertedKey = urlBase64ToUint8Array(publicVapidKey)
+        sub = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedKey
+        })
+      }
+      subscription.value = sub
+      
+      // 发送到后端，携带 userId 和 role
+      await api.post('/push/subscribe', {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('p256dh')))),
+          auth: btoa(String.fromCharCode.apply(null, new Uint8Array(sub.getKey('auth'))))
+        },
+        userId,   // 【新增】
+        role      // 【新增】
+      })
+      isSubscribed.value = true
+      console.log('订阅成功，已关联用户', userId, role)
+    } catch (err) {
+      console.error('订阅推送失败', err)
+      throw err
+    }
   }
+
+
 
   // 检查是否已有订阅（不重新创建）
   async function checkExistingSubscription() {
