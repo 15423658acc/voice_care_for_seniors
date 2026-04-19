@@ -1,5 +1,8 @@
 const nodemailer = require('nodemailer') //发送邮件
 const dotenv = require('dotenv')  //读环境变量
+const { sendPushToChild } = require('../utils/webPush')  // 订阅推送
+const { PrismaClient } = require('@prisma/client')
+const prisma = new PrismaClient()
 dotenv.config()  //加载.env文件里的配置
 
 // 创建邮件传输器
@@ -20,7 +23,7 @@ const transporter = nodemailer.createTransport({
  */
 const sendEmergencyMail = async (req, res, next) => {
     try {
-        const { location, address , elderName } = req.body  //前端定位数据
+        const { location, address , elderName , elderId } = req.body  //前端定位数据
         if (!location || !location.latitude || !location.longitude) {
             return res.status(400).json({ code: 400, msg: '缺少位置信息' })
         }
@@ -51,10 +54,41 @@ const sendEmergencyMail = async (req, res, next) => {
                 <p>]——老友助手 系统通知</p>
                   `
         }
-
-
         // 发送邮件
         await transporter.sendMail(mailOptions)
+
+
+        // 【新增】2. 发送推送给子女，如果前端没传 elderId，不发推送，但邮件正常发
+        if (elderId) {
+            try {
+            // 根据老人ID找到子女ID
+            const elder = await prisma.user.findUnique({
+                where: {id: parseInt(elderId)},
+                select: {parentId: true, fullName: true}
+            })
+            if (elder && elder.parentId) {
+                const elderDisplayName = elder.fullName || '老人'
+                console.log("parentId",elder.parentId)
+                await sendPushToChild(elder.parentId, {
+                    title: '🚨 紧急呼救',
+                    body: `${elderDisplayName} 触发了紧急呼叫，请立即查看！`,
+                    data: {
+                        url: '/emergency-logs', // 跳转到求助记录中
+                        elderId: elderId,
+                        location: location
+                    }
+                })
+            } else {
+                console.warn(`[Emergency] 老人 ${elderId} 未绑定子女，跳过推送`)
+            }
+        } catch (pushError) {
+            console.error('[Emergency] 推送子女通知失败:', pushError)
+            // 推送失败不影响主流程（邮件已发）
+        }
+
+            console.log('给子女的邮件已发送')
+        }
+
 
         res.json({ code: 200, msg: '邮件发送成功' })
     } catch (error) {
