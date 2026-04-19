@@ -1,18 +1,35 @@
 <template>
-  <div class="forgot-container">
-    <h1>找回密码</h1>
+  <div class="auth-page">
+    <div class="auth-card">
+      <h1 class="auth-title">找回密码</h1>
     <!-- @submit.prevent 阻止默认提交行为，并绑定 handleSubmit 方法 -->
-    <form @submit.prevent="handleSubmit">
-      <div class="form-group">
-        <label>注册邮箱</label>
-        <input type="email" v-model="email" required placeholder="请输入您的注册邮箱" />
-      </div>
+      <form @submit.prevent="handleSubmit" class="auth-form">
+        <div class="form-group">
+          <label for="email">注册邮箱</label>
+          <input
+            id="email"
+            type="email"
+            v-model="email"
+            required
+            placeholder="请输入您的注册邮箱"
+            autocomplete="email"
+          />
+        </div>
       <!-- disabled属性绑定loading代表发送请求时禁用，按钮文字根据loading切换显示“发送中...”或“发送重置链接” -->
-      <button type="submit" :disabled="loading">{{ loading ? '发送中...' : '发送重置链接' }}</button>
+        <button type="submit" :disabled="loading" class="btn btn-primary auth-submit">
+          {{ loading ? '发送中...' : '发送重置链接' }}
+        </button>
+
+        <p v-if="message" class="auth-message" :class="{ 'auth-error': isError }">
+          {{ message }}
+        </p>
       <!-- a与router-link：浏览器原生整页刷新跳转和vue专用单页跳转。“简单跳转”与“支持路由守卫、懒加载、路由参数” -->
-      <p class="link"><router-link to="/elder/login">返回登录</router-link></p>
-      <p v-if="message" class="message">{{ message }}</p>
-    </form>
+
+        <div class="auth-links">
+          <router-link to="/elder/login">← 返回登录</router-link>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -46,45 +63,81 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-.forgot-container {
-  max-width: 400px;
-  margin: 2rem auto;
-  padding: 1rem;
+@import '@/assets/admin.css';
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  padding: var(--space-md);
 }
-h1 {
-  font-size: 2rem;
-  text-align: center;
-}
-.form-group {
-  margin-bottom: 1.5rem;
-}
-label {
-  font-size: 1.4rem;
-  display: block;
-}
-input {
+
+.auth-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+  padding: var(--space-xl) var(--space-lg);
+  max-width: 440px;
   width: 100%;
-  padding: 0.8rem;
-  font-size: 1.4rem;
 }
-button {
-  width: 100%;
-  padding: 1rem;
-  font-size: 1.6rem;
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-.message {
-  margin-top: 1rem;
+
+.auth-title {
   text-align: center;
-  font-size: 1.4rem;
-  color: #4caf50;
+  font-size: 28px;
+  font-weight: 450;
+  color: var(--gray-900);
+  margin-bottom: var(--space-lg);
+  letter-spacing: -0.01em;
 }
-.link {
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.auth-submit {
+  padding: 14px 20px;
+  font-size: 18px;
+}
+
+.auth-message {
   text-align: center;
-  margin-top: 1rem;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  margin: 0;
+}
+.auth-message.auth-error {
+  background: #fce8e8;
+  color: #b85c5c;
+}
+
+.auth-links {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-sm);
+}
+.auth-links a {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 15px;
+}
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: var(--space-lg) var(--space-md);
+  }
+  .auth-title {
+    font-size: 24px;
+  }
 }
 </style>

@@ -1,26 +1,55 @@
 <template>
-  <div class="reset-container">
-    <h1>设置新密码</h1>
-    <form @submit.prevent="handleReset">
-      <div class="form-group">
-        <label>新密码</label>
-        <!-- 监听 input 事件实时调用 validatePassword 方法；input事件：用户在输入框里只要内容变化立刻触发 -->
-         <!-- v-model：语法糖，打字时msg自动更新修改，修改msg时输入框内容自动变 -->
-        <input type="password" v-model="newPassword" @input="validatePassword" required placeholder="密码至少8位，包含大写、小写和数字" />
-        <span class="error" v-if="passwordError">{{ passwordError }}</span>
-      </div>
-      <div class="form-group">
-        <label>确认新密码</label>
-        <input type="password" v-model="confirmPassword" @input="validateConfirm" required />
+  <div class="auth-page">
+    <div class="auth-card">
+      <h1 class="auth-title">设置新密码</h1>
+
+      <form @submit.prevent="handleReset" class="auth-form">
+        <div class="form-group">
+          <label for="new-password">新密码</label>
+          <!-- 监听 input 事件实时调用 validatePassword 方法；input事件：用户在输入框里只要内容变化立刻触发 -->
+         <!-- v-model：语法糖，打字时msg自动更新修改，修改msg时输入框内容自动变 -->      
+          <input
+            id="new-password"
+            type="password"
+            v-model="newPassword"
+            @input="validatePassword"
+            required
+            placeholder="至少8位，含大小写字母和数字"
+            autocomplete="new-password"
+          />
+          <span class="field-error" v-if="passwordError">{{ passwordError }}</span>
+        </div>
+
+        <div class="form-group">
+          <label for="confirm-password">确认新密码</label>
+          
+          <input
+            id="confirm-password"
+            type="password"
+            v-model="confirmPassword"
+            @input="validateConfirm"
+            required
+            placeholder="请再次输入新密码"
+            autocomplete="new-password"
+          />
         <!-- 如果存在 confirmError 则显示错误信息。 -->
-        <span class="error" v-if="confirmError">{{ confirmError }}</span>
-      </div>
+          <span class="field-error" v-if="confirmError">{{ confirmError }}</span>
+        </div>
+
       <!-- 禁用提交按钮：loading为true或isValid为 false -->
-      <button type="submit" :disabled="loading || !isValid">重置密码</button>
+        <button type="submit" :disabled="loading || !isValid" class="btn btn-primary auth-submit">
+          {{ loading ? '提交中...' : '重置密码' }}
+        </button>
       <!-- v-if控制p标签显示(true或false)，Vue 动态绑定class，错误时：class="message error"，成功时：class="message success" -->
-      <p v-if="message" :class="['message', isError ? 'error' : 'success']">{{ message }}</p>
-    </form>
-    <p class="link"><router-link to="/elder/login">返回登录</router-link></p>
+        <p v-if="message" class="auth-message" :class="{ 'auth-error': isError }">
+          {{ message }}
+        </p>
+
+        <div class="auth-links">
+          <router-link to="/elder/login">← 返回登录</router-link>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -115,58 +144,93 @@ const handleReset = async () => {
 </script>
 
 <style scoped>
-.reset-container {
-  max-width: 400px;
-  margin: 2rem auto;
-  padding: 1rem;
+@import '@/assets/admin.css';
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  padding: var(--space-md);
 }
-h1 {
-  font-size: 2rem;
+
+.auth-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+  padding: var(--space-xl) var(--space-lg);
+  max-width: 440px;
+  width: 100%;
+}
+
+.auth-title {
   text-align: center;
+  font-size: 28px;
+  font-weight: 450;
+  color: var(--gray-900);
+  margin-bottom: var(--space-lg);
+  letter-spacing: -0.01em;
 }
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
 .form-group {
-  margin-bottom: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
 }
-label {
-  font-size: 1.4rem;
-  display: block;
+
+.field-error {
+  color: #b85c5c;
+  font-size: 13px;
+  margin-top: 2px;
 }
-input {
-  width: 100%;
-  padding: 0.8rem;
-  font-size: 1.4rem;
+
+.auth-submit {
+  padding: 14px 20px;
+  font-size: 18px;
 }
-.error {
-  color: #f44336;
-  font-size: 1.2rem;
-}
-small {
-  font-size: 1.2rem;
-  color: #666;
-}
-button {
-  width: 100%;
-  padding: 1rem;
-  font-size: 1.6rem;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-.message {
-  margin-top: 1rem;
+
+.auth-message {
   text-align: center;
-  font-size: 1.4rem;
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  margin: 0;
 }
-.success {
-  color: #4caf50;
+.auth-message.auth-error {
+  background: #fce8e8;
+  color: #b85c5c;
 }
-.error {
-  color: #f44336;
+
+.auth-links {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-sm);
 }
-.link {
-  text-align: center;
-  margin-top: 1rem;
+.auth-links a {
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 15px;
+}
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: var(--space-lg) var(--space-md);
+  }
+  .auth-title {
+    font-size: 24px;
+  }
 }
 </style>
