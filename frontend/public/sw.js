@@ -39,9 +39,12 @@ self.addEventListener('push', event => {
   // 判断是否为紧急呼叫（可根据 data 中自定义字段）
   const isEmergency = data.data && data.data.type === 'emergency'
 
+  console.log(`[SW] 收到推送，紧急=${isEmergency}`, data)
+
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true })
       .then(clients => {
+         console.log(`[SW] 找到 ${clients.length} 个客户端`)
         if (clients.length > 0) {
           // 有打开的页面，发送消息让页面处理（包括语音播报）
           clients.forEach(client => {
@@ -49,6 +52,7 @@ self.addEventListener('push', event => {
               type: isEmergency ? 'EMERGENCY' : 'REMINDER',
               payload: data
             })
+            console.log('[SW] 已向客户端发送消息:', msg)
           })
           // 如果是紧急呼叫，额外显示一条系统通知（保证后台时也能收到），页面打开时仍然强制弹出系统通知
           if (isEmergency) {

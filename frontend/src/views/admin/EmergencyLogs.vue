@@ -105,7 +105,7 @@ const permission = await Notification.requestPermission()
 
     await subscribeUser(user.id, 'child')
     pushEnabled.value = true
-    alert('紧急通知已开启，您将收到老人的紧急呼叫提醒。')
+    alert('紧急通知已开启，您将在后台同步收到紧急呼叫提醒。')
   } catch (err) {
     console.error('订阅失败', err)
     alert('订阅失败，请检查浏览器通知权限')

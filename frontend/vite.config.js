@@ -22,7 +22,7 @@ export default defineConfig({
         theme_color: '#ffffff', // 主题色
         icons: [
           {
-            src: 'pwa-192x192.png', // 图标路径，请将图标放在 public 目录下
+            src: 'pwa-192x192.png', // 图标路径
             sizes: '192x192',
             type: 'image/png'
           },
