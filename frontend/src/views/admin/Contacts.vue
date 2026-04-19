@@ -1,51 +1,57 @@
 <template>
-  <div class="contacts">
-    <h1>紧急联系人管理</h1>
-    <div class="actions">
-      <button @click="openAddModal">添加联系人</button>
-      <select v-model="selectedUserId" @change="fetchContacts">
+  <div class="contacts-page">
+    <div class="page-header">
+      <h1>紧急联系人</h1>
+    </div>
+    <div class="action-bar">
+      <button class="btn btn-primary" @click="openAddModal">添加联系人</button>
+      <select v-model="selectedUserId" @change="fetchContacts" class="select-elder">
         <option v-for="elder in elders" :key="elder.id" :value="elder.id">{{ elder.username }}</option>
       </select>
     </div>
 
-    <table v-if="contacts.length">
-      <thead>
-        <tr><th>姓名</th><th>电话</th><th>邮箱</th><th>操作</th></tr>
-      </thead>
-      <tbody>
-        <tr v-for="c in contacts" :key="c.id">
-          <td>{{ c.name }}</td>
-          <td>{{ c.phone }}</td>
-          <td>{{ c.email }}</td>
-          <td>
-            <button @click="editContact(c)">编辑</button>
-            <button @click="deleteContact(c.id)">删除</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-else>暂无联系人</p>
+    <div v-if="contacts.length" class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>姓名</th><th>电话</th><th>邮箱</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="c in contacts" :key="c.id">
+            <td>{{ c.name }}</td>
+            <td>{{ c.phone }}</td>
+            <td>{{ c.email || '—' }}</td>
+            <td>
+              <div class="row-actions">
+                <button class="btn btn-outline btn-sm" @click="editContact(c)">编辑</button>
+                <button class="btn btn-outline btn-sm" @click="deleteContact(c.id)">删除</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p v-else class="empty-state">暂无联系人，点击上方添加</p>
 
-    <!-- 模态框 -->
-    <div v-if="showModal" class="modal" @click.self="closeModal">
-      <div class="modal-content">
+     <!-- 模态框（可复用全局modal样式） -->
+    <div v-if="showModal" class="modal-mask" @click.self="closeModal">
+      <div class="modal-container">
         <h2>{{ isEdit ? '编辑联系人' : '添加联系人' }}</h2>
         <form @submit.prevent="submitContact">
           <div class="form-group">
             <label>姓名 *</label>
-            <input v-model="form.name" required />
+            <input v-model="form.name" required placeholder="例如：李医生" />
           </div>
           <div class="form-group">
             <label>电话 *</label>
-            <input v-model="form.phone" required />
+            <input v-model="form.phone" required placeholder="手机号码" />
           </div>
           <div class="form-group">
             <label>邮箱</label>
-            <input v-model="form.email" type="email" />
+            <input v-model="form.email" type="email" placeholder="选填" />
           </div>
-          <div class="form-buttons">
-            <button type="submit">保存</button>
-            <button type="button" @click="closeModal">取消</button>
+          <div class="form-buttons" style="display: flex; gap: 12px; margin-top: 24px;">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <button type="button" class="btn" @click="closeModal">取消</button>
           </div>
         </form>
       </div>
@@ -166,5 +172,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 样式可根据需要调整，此处略 */
+/* 页面特有微调，大部分依赖全局 admin.css */
+.page-header {
+  margin-bottom: var(--space-lg);
+}
+.empty-state {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--text-muted);
+  background: var(--gray-50);
+  border-radius: var(--radius-card);
+}
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 14px;
+}
+
+
 </style>

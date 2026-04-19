@@ -1,76 +1,87 @@
 <!-- src/views/admin/Register.vue -->
 <template>
-  <div class="register-container">
-    <h1 class="title">子女账号注册</h1>
-    <form @submit.prevent="handleRegister" class="register-form">
-      <!-- 用户名 -->
-      <div class="form-group">
-        <label>用户名 *</label>
-        <input
-          v-model="form.username"
-          @blur="validateUsername"
-          type="text"
-          placeholder="请输入用户名"
-          autocomplete="off"
-        />
-        <span class="error" v-if="errors.username">{{ errors.username }}</span>
-      </div>
+  <div class="auth-page">
+    <div class="auth-card auth-card--wide">
+      <h1 class="auth-title">子女账号注册</h1>
 
-      <!-- 密码 -->
-      <div class="form-group">
-        <label>密码 *</label>
-        <input
-          type="password"
-          v-model="form.password"
-          @input="validatePassword"
-          placeholder="请输入密码"
-        />
-        <span class="error" v-if="errors.password">{{ errors.password }}</span>
-        <small>密码至少8位，包含大写字母、小写字母和数字</small>
-      </div>
+      <form @submit.prevent="handleRegister" class="auth-form">
+        <!-- 用户名 -->
+        <div class="form-group">
+          <label>用户名 <span class="required">*</span></label>
+          <input
+            v-model="form.username"
+            @blur="validateUsername"
+            type="text"
+            placeholder="请输入用户名"
+            autocomplete="off"
+          />
+          <span class="field-error" v-if="errors.username">{{ errors.username }}</span>
+        </div>
 
-      <!-- 确认密码 -->
-      <div class="form-group">
-        <label>确认密码 *</label>
-        <input
-          type="password"
-          v-model="form.confirmPassword"
-          @input="validateConfirm"
-          placeholder="请再次输入密码"
-        />
-        <span class="error" v-if="errors.confirmPassword">{{ errors.confirmPassword }}</span>
-      </div>
+        <!-- 密码 -->
+        <div class="form-group">
+          <label>密码 <span class="required">*</span></label>
+          <input
+            type="password"
+            v-model="form.password"
+            @input="validatePassword"
+            placeholder="至少8位，含大小写字母和数字"
+            autocomplete="new-password"
+          />
+          <span class="field-error" v-if="errors.password">{{ errors.password }}</span>
+        </div>
 
-      <!-- 邮箱（可选） -->
-      <div class="form-group">
-        <label>邮箱（可选）</label>
-        <input
-          v-model="form.email"
-          @blur="validateEmail"
-          type="email"
-          placeholder="请输入邮箱"
-        />
-        <span class="error" v-if="errors.email">{{ errors.email }}</span>
-      </div>
+        <!-- 确认密码 -->
+        <div class="form-group">
+          <label>确认密码 <span class="required">*</span></label>
+          <input
+            type="password"
+            v-model="form.confirmPassword"
+            @input="validateConfirm"
+            placeholder="请再次输入密码"
+            autocomplete="new-password"
+          />
+          <span class="field-error" v-if="errors.confirmPassword">{{ errors.confirmPassword }}</span>
+        </div>
 
-      <!-- 协议勾选 -->
-      <div class="form-group checkbox">
-        <label>
-          <input type="checkbox" v-model="form.agreeTerms" />
-          我已阅读并同意 <a href="#" @click.prevent="showAgreement">《用户协议》</a> 和
-          <a href="#" @click.prevent="showPrivacy">《隐私政策》</a>
-        </label>
-        <span class="error" v-if="errors.agreeTerms">{{ errors.agreeTerms }}</span>
-      </div>
+        <!-- 邮箱 -->
+        <div class="form-group">
+          <label>邮箱（可选）</label>
+          <input
+            v-model="form.email"
+            @blur="validateEmail"
+            type="email"
+            placeholder="用于找回密码"
+            autocomplete="email"
+          />
+          <span class="field-error" v-if="errors.email">{{ errors.email }}</span>
+        </div>
 
-      <button type="submit" :disabled="loading || !isFormValid" class="register-btn">
-        {{ loading ? '注册中...' : '注册' }}
-      </button>
-      <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
-      <p class="login-link">
-        已有账号？<router-link to="/admin/login">去登录</router-link>
-      </p>
-    </form>
+        <!-- 协议勾选 -->
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="form.agreeTerms" />
+            <span>
+              我已阅读并同意
+              <a href="#" @click.prevent="showAgreement">《用户协议》</a>
+              和
+              <a href="#" @click.prevent="showPrivacy">《隐私政策》</a>
+            </span>
+          </label>
+          <span class="field-error" v-if="errors.agreeTerms">{{ errors.agreeTerms }}</span>
+        </div>
+
+        <button type="submit" :disabled="loading || !isFormValid" class="btn btn-primary auth-submit">
+          {{ loading ? '注册中...' : '注册' }}
+        </button>
+
+        <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
+
+        <div class="auth-links">
+          <router-link to="/admin/login">已有账号？去登录</router-link>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -219,81 +230,125 @@ const showPrivacy = () => {
 </script>
 
 <style scoped>
-.register-container {
-  max-width: 500px;
-  margin: 50px auto;
-  padding: 2rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-.title {
-  text-align: center;
-  font-size: 2rem;
-  margin-bottom: 2rem;
-}
-.form-group {
-  margin-bottom: 1.5rem;
-}
-.form-group label {
-  display: block;
-  font-size: 1.4rem;
-  margin-bottom: 0.5rem;
-}
-.form-group input {
-  width: 100%;
-  padding: 1rem;
-  font-size: 1.4rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-.checkbox label {
+@import '@/assets/admin.css';
+
+.auth-page {
+  min-height: 100vh;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.4rem;
+  justify-content: center;
+  background: var(--bg-page);
+  padding: var(--space-md);
 }
-.checkbox input {
-  width: auto;
-}
-.error {
-  color: #f44336;
-  font-size: 1.2rem;
-  margin-top: 0.2rem;
-  display: block;
-}
-small {
-  font-size: 1.2rem;
-  color: #666;
-  display: block;
-  margin-top: 0.2rem;
-}
-.register-btn {
+
+.auth-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+  padding: var(--space-xl) var(--space-lg);
+  max-width: 520px;
   width: 100%;
-  padding: 1.2rem;
-  font-size: 1.6rem;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 4px;
+}
+
+.auth-card--wide {
+  max-width: 560px;
+}
+
+.auth-title {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 450;
+  color: var(--gray-900);
+  margin-bottom: var(--space-lg);
+  letter-spacing: -0.01em;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.required {
+  color: #b85c5c;
+  margin-left: 2px;
+}
+
+.field-error {
+  color: #b85c5c;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.checkbox-group {
+  margin-top: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 400;
   cursor: pointer;
 }
-.register-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--primary);
 }
-.error-msg {
-  color: #f44336;
-  margin-top: 1rem;
-  text-align: center;
-}
-.login-link {
-  text-align: center;
-  margin-top: 1.5rem;
-  font-size: 1.4rem;
-}
-.login-link a {
-  color: #2196f3;
+.checkbox-label a {
+  color: var(--primary);
   text-decoration: none;
+}
+.checkbox-label a:hover {
+  text-decoration: underline;
+}
+
+.auth-submit {
+  margin-top: var(--space-sm);
+  padding: 14px 20px;
+  font-size: 18px;
+}
+
+.auth-error {
+  color: #b85c5c;
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+  background: #fce8e8;
+  padding: 8px 12px;
+  border-radius: var(--radius-input);
+}
+
+.auth-links {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-sm);
+  font-size: 15px;
+}
+.auth-links a {
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.auth-links a:hover {
+  border-bottom-color: var(--primary);
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: var(--space-lg) var(--space-md);
+  }
+  .auth-title {
+    font-size: 24px;
+  }
 }
 </style>

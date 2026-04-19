@@ -1,46 +1,56 @@
 <template>
   <div class="reminders">
-    <h1>吃药提醒管理</h1>
-    <div class="actions">
-      <button @click="openAddModal">添加提醒</button>
-      <select v-model="selectedUserId" @change="fetchReminders">
-        <option v-for="elder in elders" :key="elder.id" :value="elder.id">{{ elder.username }}</option>
+    <div class="page-header">
+      <h1>吃药提醒管理</h1>
+    </div>
+
+    <div class="action-bar">
+      <button @click="openAddModal" class="btn btn-primary"> 添加提醒</button>
+      <select v-model="selectedUserId" @change="fetchReminders" class="select-elder">
+        <option v-for="elder in elders" :key="elder.id" :value="elder.id">
+          {{ elder.username }}
+        </option>
       </select>
     </div>
 
-    <table v-if="reminders.length">
-      <!-- 表头增加“重复”列 -->
-      <thead>
-        <tr><th>标题</th><th>药品</th><th>提醒时间</th><th>重复</th><th>状态</th><th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="r in reminders" :key="r.id">
-          <td>{{ r.title }}</td>
-          <td>{{ r.medicine }}</td>
-          <!-- <td>{{ formatDateTime(r.remindAt) }}</td> -->
-          <td class="time-cell">
-            <div class="main-time" @click="quickEditTime(r)">
-              {{ formatMainTime(r) }}
-            </div>
-            <div class="next-time"">
-              下次提醒时间: {{ formatNextTime(r.nextRemindAt) }}
-            </div>
-          </td>
-          <td>{{ repeatTypeText(r.repeatType) }}</td>
-          <td>{{ r.taken ? '今日已吃' : '未吃' }}</td>
-          <td>
-            <button @click="editReminder(r)">编辑</button>
-            <button @click="deleteReminder(r.id)">删除</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-else>暂无提醒</p>
+    <div v-if="reminders.length" class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>标题</th><th>药品</th><th>提醒时间</th><th>重复</th><th>状态</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in reminders" :key="r.id">
+            <td>{{ r.title }}</td>
+            <td>{{ r.medicine || '—' }}</td>
+            <td class="time-cell">
+              <div class="main-time" @click="quickEditTime(r)">
+                {{ formatMainTime(r) }}
+              </div>
+              <div class="next-time">
+                下次: {{ formatNextTime(r.nextRemindAt) }}
+              </div>
+            </td>
+            <td>{{ repeatTypeText(r.repeatType) }}</td>
+            <td>
+              <span :class="r.taken ? 'status-taken' : 'status-pending'">
+                {{ r.taken ? '已吃' : '未吃' }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button @click="editReminder(r)" class="btn btn-outline btn-sm">编辑</button>
+                <button @click="deleteReminder(r.id)" class="btn btn-outline btn-sm">删除</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p v-else class="empty-state">暂无提醒，点击上方添加</p>
 
-    <!-- 模态框 -->
-    <div v-if="showModal" class="modal" @click.self="closeModal">
-      <div class="modal-content">
+ <!-- 模态框 -->
+    <div v-if="showModal" class="modal-mask" @click.self="closeModal">
+      <div class="modal-container">
         <h2>{{ isEdit ? '编辑提醒' : '添加提醒' }}</h2>
         <form @submit.prevent="submitReminder">
           <div class="form-group">
@@ -69,9 +79,9 @@
               <option value="weekly">每周一次</option>
             </select>
           </div>
-          <div class="form-buttons">
-            <button type="submit">保存</button>
-            <button type="button" @click="closeModal">取消</button>
+          <div class="form-buttons" style="display: flex; gap: 12px; margin-top: 24px;">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <button type="button" @click="closeModal" class="btn">取消</button>
           </div>
         </form>
       </div>
@@ -166,7 +176,7 @@ const openAddModal = () => {
     medicine: '',
     description: '',
     remindAt: '',
-    repeatType: 'none'
+    repeatType: ''
   }
   showModal.value = true
 }
@@ -228,32 +238,38 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ========== 子女端优化交互体验 ========== */
-.time-cell {
-  cursor: pointer;
-  user-select: none;
+
+.page-header {
+  margin-bottom: var(--space-lg);
 }
-.main-time {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #2c3e50;
-  padding: 6px 0;
+.status-taken {
+  color: var(--primary-dark);
+  background: var(--primary-light);
+  padding: 4px 10px;
+  border-radius: 30px;
+  font-size: 13px;
 }
-.main-time:active {
-  background-color: #f0f0f0;
+.status-pending {
+  color: #b85c5c;
+  background: #fce8e8;
+  padding: 4px 10px;
+  border-radius: 30px;
+  font-size: 13px;
 }
-.next-time {
-  font-size: 0.9rem;
-  color: #666;
-  padding: 4px 0;
+.row-actions {
+  display: flex;
+  gap: 8px;
 }
-.next-time:active {
-  background-color: #f5f5f5;
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 14px;
 }
-/* 确保点击区域足够大，移动端友好 */
-@media (max-width: 600px) {
-  .main-time, .next-time {
-    padding: 8px 0;
-  }
+.empty-state {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--text-muted);
+  background: var(--gray-50);
+  border-radius: var(--radius-card);
 }
+
 </style>

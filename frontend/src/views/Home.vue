@@ -91,6 +91,7 @@ const getElderName = () => {
   return '老人';
 };
 
+
 // ---------- 清理 UI 状态（倒计时结束后调用）----------
 const clearEmergencyUI = () => {
   if (countdownTimer) {
@@ -118,10 +119,23 @@ const sendEmergencyToBackend = (locationData) => {
   // 2. 构建地图链接
   const mapLink = `https://uri.amap.com/marker?position=${locationData.longitude},${locationData.latitude}&name=老人当前位置&coordinate=wgs84`;
 
+  let elderId = null;
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      elderId = user.id;   // 确保后端接收到的字段名为 elderId
+    }
+  } catch (e) {
+    console.warn('获取老人ID失败', e);
+  }
+
+
   const emailBody = {
     location: { latitude: locationData.latitude, longitude: locationData.longitude},
     address: mapLink,
     elderName: getElderName(),
+    elderId: elderId,   //从 localStorage 获取老人ID
   };
 
   const logBody = { latitude: locationData.latitude, longitude: locationData.longitude,location: mapLink  };

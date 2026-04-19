@@ -1,37 +1,48 @@
 <template>
-  <div class="login-container">
-    <button class="logout-btn" @click="handleJumpElder">🚪 老人端</button>
-    <h1 class="title">子女后台登录</h1>
-    <form @submit.prevent="handleLogin" class="login-form">
-      <div class="form-group">
-        <label for="username">用户名</label>
-        <input
-          id="username"
-          v-model="form.username"
-          type="text"
-          required
-          placeholder="请输入用户名"
-        />
-      </div>
-      <div class="form-group">
-        <label for="password">密码</label>
-        <input
-          id="password"
-          v-model="form.password"
-          type="password"
-          required
-          placeholder="请输入密码"
-        />
-      </div>
-      <button type="submit" :disabled="loading" class="login-btn">
-        {{ loading ? '登录中...' : '登录' }}
-      </button>
-      <p v-if="error" class="error">{{ error }}</p>
-      <p class="register-link">
-          还没有账号？<router-link to="/admin/register">立即注册</router-link>
-      </p>
-      <p class="forgot-password"><router-link to="/forgot-password">忘记密码？</router-link></p>
-    </form>
+  <div class="auth-page">
+    <div class="auth-card">
+      <!-- 跳转老人端按钮，安静置于右上角 -->
+      <button class="auth-switch-btn" @click="handleJumpElder">👤 老人端</button>
+
+      <h1 class="auth-title">子女后台登录</h1>
+
+      <form @submit.prevent="handleLogin" class="auth-form">
+        <div class="form-group">
+          <label for="username">用户名</label>
+          <input
+            id="username"
+            v-model="form.username"
+            type="text"
+            required
+            placeholder="请输入用户名"
+            autocomplete="username"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password">密码</label>
+          <input
+            id="password"
+            v-model="form.password"
+            type="password"
+            required
+            placeholder="请输入密码"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button type="submit" :disabled="loading" class="btn btn-primary auth-submit">
+          {{ loading ? '登录中...' : '登录' }}
+        </button>
+
+        <p v-if="error" class="auth-error">{{ error }}</p>
+
+        <div class="auth-links">
+          <router-link to="/admin/register">还没有账号？立即注册</router-link>
+          <router-link to="/forgot-password">忘记密码？</router-link>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -76,87 +87,110 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-container {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 2rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  position: relative; /* 让跳转按钮可以绝对定位在角落 */
+@import '@/assets/admin.css';
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  padding: var(--space-md);
 }
-.title {
+
+.auth-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+  padding: var(--space-xl) var(--space-lg);
+  max-width: 440px;
+  width: 100%;
+  position: relative;
+}
+
+.auth-switch-btn {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: none;
+  border: 1px solid var(--gray-300);
+  padding: 6px 14px;
+  border-radius: 30px;
+  color: var(--gray-700);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.auth-switch-btn:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
+.auth-title {
   text-align: center;
-  font-size: 2rem;
-  margin-bottom: 2rem;
+  font-size: 28px;
+  font-weight: 450;
+  color: var(--gray-900);
+  margin-bottom: var(--space-lg);
+  letter-spacing: -0.01em;
 }
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
 .form-group {
-  margin-bottom: 1.5rem;
-}
-label {
-  display: block;
-  font-size: 1.4rem;
-  margin-bottom: 0.5rem;
-}
-input {
-  width: 100%;
-  padding: 1rem;
-  font-size: 1.4rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-.login-btn {
-  width: 100%;
-  padding: 1.2rem;
-  font-size: 1.6rem;
-  background-color: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.login-btn:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-.error {
-  color: red;
-  margin-top: 1rem;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
 }
 
-.register-link {
-  text-align: center;
-  margin-top: 1rem;
-}
-.register-link a {
-  color: #2196f3;
-  text-decoration: none;
-}
-.forgot-password {
-  text-align: center;
-  margin-top: 1rem;
-}
-.forgot-password a {
-  color: #2196f3;
-  text-decoration: none;
+.auth-submit {
+  margin-top: var(--space-sm);
+  padding: 14px 20px;
+  font-size: 18px;
 }
 
-.logout-btn {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  background-color: #f44336;
-  color: white;
-  font-size: 1.4rem;
-  padding: 0.8rem 1.2rem;
-  border: none;
-  border-radius: 2rem;
-  cursor: pointer;
-  z-index: 100;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+.auth-error {
+  color: #b85c5c;
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+  background: #fce8e8;
+  padding: 8px 12px;
+  border-radius: var(--radius-input);
 }
-.logout-btn:hover {
-  background-color: #d32f2f;
+
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-sm);
+  font-size: 14px;
+}
+.auth-links a {
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.1s;
+}
+.auth-links a:hover {
+  border-bottom-color: var(--primary);
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: var(--space-lg) var(--space-md);
+  }
+  .auth-title {
+    font-size: 24px;
+  }
+  .auth-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
 }
 </style>
