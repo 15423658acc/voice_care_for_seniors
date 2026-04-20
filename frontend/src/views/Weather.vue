@@ -89,11 +89,11 @@ import api from '@/api'
 import { getCachedLocation, updateLocationCacheSilently } from '@/utils/location'  // 导入定位工具
 
 // ========== 原有数据 ==========
-const city = ref('北京')
+const city = ref('章丘')
 const weather = ref(null)
 const error = ref('')
 const loading = ref(false)
-const commonCities = ['北京', '上海', '广州', '深圳', '成都', '杭州']
+const commonCities = ['济南', '上海','北京','广州', '深圳', '成都', '杭州']
 
 // ========== 新增数据 ==========
 const extendedWeather = ref(null)      // 存储扩展天气（预报+历史）
@@ -111,6 +111,7 @@ const fetchWeather = async () => {
   if (!city.value) return
   error.value = ''
   loading.value = true
+  extendedWeather.value = null // 清空旧预报
 
   try {
     const res = await api.get('/weather/current', {
@@ -118,7 +119,22 @@ const fetchWeather = async () => {
     })
     // console.log(res);
     weather.value = res
-    speakWeather()
+
+    // 2. 关键：再调用定位风格的接口，拿预报和昨日天气
+    // 接口：/weather/location 但传 city，后端一般支持
+    const extRes = await api.get('/weather/location', {
+      params: { city: city.value }
+    })
+
+    // 把预报和历史赋值
+    extendedWeather.value = {
+      forecast: extRes.forecast,
+      yesterday: extRes.yesterday
+    }
+
+    // 播报完整天气
+    speakFullWeather()
+    // speakWeather()
   } catch (err) {
     error.value = '获取天气失败，请重试'
     console.error(err)
@@ -127,6 +143,7 @@ const fetchWeather = async () => {
     loading.value = false
   }
 }
+
 
 const speakWeather = () => {
   if (!weather.value) return
@@ -172,7 +189,7 @@ const fetchWeatherByLocation = async () => {
     // }
     
 
-    // 将实时天气赋值给原有的 weather（保持原有展示一致）
+    // 将实时天气赋值给原有的 weathe
     weather.value = res.current
     // 存储扩展数据（预报+历史）
     extendedWeather.value = {

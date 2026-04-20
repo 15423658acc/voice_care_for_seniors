@@ -97,14 +97,64 @@ const getCurrentWeather = async (req, res, next) => {
 /**
  * 根据经纬度获取聚合天气数据（实时 + 3天预报 + 昨日历史）
  * GET /weather/location?lat=xx&lon=xx
+ * 通过城市名请求：
+ * GET /weather/location?city=上海
+ * 通过经纬度请求：
+ * GET /weather/location?lat=39.9042&lon=116.4074（北京）
  */
 const getWeatherByLocation = async (req, res, next) => {
     try {
-        const { lat, lon } = req.query;
-        if (!lat || !lon) {
-            return res.status(400).json({ code: 400, msg: '请提供经纬度参数 lat 和 lon' });
+        // 1.参数解构：增加了 city。
+        const { lat, lon,city } = req.query;
+        // 2.参数校验：要么提供 city，要么同时提供 lat 和 lon
+        if (!city && (!lat || !lon)) {
+            return res.status(400).json({ code: 400, msg: '请提供城市名(city) 或 经纬度(lat+lon)' });
         }
 
+        let locationId = null;
+        let cityName = null;
+
+        // ---------- 3.根据输入类型获取 locationId 和 cityName ----------
+        if (city) {
+            // 方式1：通过城市名查询，如果提供了 city，则调用城市搜索接口（location=城市名），取第一个结果。
+            const searchUrl = `${HEFENG_HOST}/geo/v2/city/lookup`;
+            const searchParams = {
+                location: city,
+                key: HEFENG_API_KEY
+            };
+            console.log('[天气-定位] 通过城市名查询:', city, searchParams);
+
+            const searchResp = await axios.get(searchUrl, { params: searchParams, timeout: 5000 });
+            if (searchResp.data.code !== '200' || !searchResp.data.location || searchResp.data.location.length === 0) {
+                console.error('[天气-定位] 城市名查询失败', searchResp.data);
+                return res.status(404).json({ code: 404, msg: '未找到该城市，请检查城市名' });
+            }
+
+            const locationInfo = searchResp.data.location[0];
+            locationId = locationInfo.id;
+            cityName = locationInfo.name;
+        } else {
+            // 方式2：通过经纬度查询（注意和风要求：经度,纬度），否则使用原有的经纬度反查逻辑（location=经度,纬度）。
+            const locationStr = `${lon},${lat}`;
+            const searchUrl = `${HEFENG_HOST}/geo/v2/city/lookup`;
+            const searchParams = {
+                location: locationStr,
+                key: HEFENG_API_KEY
+            };
+            console.log('[天气-定位] 通过经纬度查询:', locationStr, searchParams);
+
+            const searchResp = await axios.get(searchUrl, { params: searchParams, timeout: 5000 });
+            if (searchResp.data.code !== '200' || !searchResp.data.location || searchResp.data.location.length === 0) {
+                console.error('[天气-定位] 经纬度查询失败', searchResp.data);
+                return res.status(404).json({ code: 404, msg: '未找到该经纬度对应的城市' });
+            }
+
+            const locationInfo = searchResp.data.location[0];
+            locationId = locationInfo.id;
+            cityName = locationInfo.name;
+        }
+
+            /**
         // 步骤1：通过经纬度查询城市信息，获取 location_id 和城市名
         const locationStr = `${lon},${lat}`;  // 注意和风格式：经度,纬度
         const searchUrl = `${HEFENG_HOST}/geo/v2/city/lookup`;
@@ -123,7 +173,11 @@ const getWeatherByLocation = async (req, res, next) => {
         const locationInfo = searchResp.data.location[0];
         const locationId = locationInfo.id;
         const cityName = locationInfo.name;
+         *
+         */
 
+
+        // 4.不变--：统一后续逻辑：获取到 locationId 和标准 cityName 后，后续的实时、预报、历史请求完全复用原有代码。
         // 步骤2：并发请求实时天气、3天预报、昨日历史
         const nowUrl = `${HEFENG_HOST}/v7/weather/now`;
         const forecastUrl = `${HEFENG_HOST}/v7/weather/3d`;   // 3天预报（包含今天）
