@@ -1,0 +1,220 @@
+/* ========== 老友助手 · 老人端全局样式 ========== */
+/* 设计原则：柔和米白、哑光质感、超大组件、粗字体、高对比、色盲友好 */
+
+:root {
+  /* ----- 主色调：沉稳、不刺眼 ----- */
+  --elder-primary: #1e4f6b;       /* 深蓝，用于主要按钮、强调 */
+  --elder-primary-light: #e2ecf3;
+  --elder-secondary: #5f6c7a;     /* 辅助灰蓝 */
+  
+  /* 功能色块（不依赖红绿，用文字/形状辅助） */
+  --elder-success-bg: #e3f0e8;    /* 浅绿底，仅作背景区分，非唯一标识 */
+  --elder-warning-bg: #fef3e2;
+  --elder-error-bg: #fce9e9;
+  --elder-info-bg: #e6edf3;
+  
+  /* 中性背景 */
+  --elder-bg-page: #f7f6f2;       /* 柔和米白，不纯白反光 */
+  --elder-bg-card: #ffffff;
+  --elder-border: #cfd7de;        /* 边框色，对比清晰 */
+  --elder-border-dark: #a0aab3;
+  
+  /* 文字颜色 */
+  --elder-text-primary: #1a232b;  /* 深灰，高对比 */
+  --elder-text-secondary: #4e5b66;
+  --elder-text-muted: #6e7b86;
+  
+  /* 圆角与阴影（微阴影，不浮夸） */
+  --elder-radius-sm: 10px;
+  --elder-radius-md: 16px;
+  --elder-radius-lg: 24px;
+  --elder-shadow-sm: 0 2px 6px rgba(0,0,0,0.03);
+  --elder-shadow-md: 0 4px 10px rgba(0,0,0,0.05);
+  
+  /* 间距系统（放大，适合老人） */
+  --elder-space-xs: 8px;
+  --elder-space-sm: 16px;
+  --elder-space-md: 24px;
+  --elder-space-lg: 32px;
+  --elder-space-xl: 48px;
+  
+  /* 字体大小（超大） */
+  --elder-fs-base: 18px;          /* 正文基础 */
+  --elder-fs-large: 22px;
+  --elder-fs-xl: 28px;
+  --elder-fs-2xl: 36px;
+  --elder-fs-3xl: 48px;
+  --elder-fs-4xl: 64px;
+  
+  /* 按钮高度 */
+  --elder-btn-height: 56px;
+  --elder-btn-height-sm: 48px;
+}
+
+/* 重置 & 基础 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 5px;
+  background-color: var(--elder-bg-page);
+  color: var(--elder-text-primary);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font-size: var(--elder-fs-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 标题层次 */
+h1, h2, h3 {
+  font-weight: 600;
+  color: var(--elder-text-primary);
+  margin-bottom: var(--elder-space-md);
+}
+h1 { font-size: var(--elder-fs-2xl); }
+h2 { font-size: var(--elder-fs-xl); }
+
+/* 卡片容器 */
+.elder-card {
+  background: var(--elder-bg-card);
+  border-radius: var(--elder-radius-md);
+  padding: var(--elder-space-md);
+  box-shadow: var(--elder-shadow-sm);
+  border: 1px solid var(--elder-border);
+}
+
+/* 按钮基础 - 哑光、粗边、大触控区域 */
+.elder-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--elder-space-xs);
+  min-height: var(--elder-btn-height);
+  padding: 0 var(--elder-space-lg);
+  font-size: var(--elder-fs-large);
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: var(--elder-radius-lg);
+  background: var(--elder-bg-card);
+  color: var(--elder-text-primary);
+  border: 2px solid var(--elder-border-dark);
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow: var(--elder-shadow-sm);
+  text-decoration: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+.elder-btn:active {
+  background: var(--elder-border);
+  transform: scale(0.98);
+}
+.elder-btn-primary {
+  background: var(--elder-primary);
+  border-color: var(--elder-primary);
+  color: white;
+}
+.elder-btn-primary:active {
+  background: #143a4b;
+}
+.elder-btn-success {
+  background: var(--elder-success-bg);
+  border-color: #2c6b4b;
+  color: #1f4a36;
+}
+.elder-btn-warning {
+  background: var(--elder-warning-bg);
+  border-color: #b87c2c;
+  color: #7a521e;
+}
+.elder-btn-block {
+  width: 100%;
+}
+
+/* 输入框 */
+.elder-input {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: var(--elder-fs-large);
+  border: 2px solid var(--elder-border-dark);
+  border-radius: var(--elder-radius-md);
+  background: white;
+  color: var(--elder-text-primary);
+  outline: none;
+}
+.elder-input:focus {
+  border-color: var(--elder-primary);
+  box-shadow: 0 0 0 3px rgba(30,79,107,0.15);
+}
+.elder-input::placeholder {
+  color: var(--elder-text-muted);
+  opacity: 0.7;
+}
+
+/* 选择框 */
+.elder-select {
+  padding: 14px 18px;
+  font-size: var(--elder-fs-large);
+  border: 2px solid var(--elder-border-dark);
+  border-radius: var(--elder-radius-md);
+  background: white;
+  min-height: var(--elder-btn-height);
+}
+
+/* 网格布局（用于首页四格） */
+.elder-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--elder-space-md);
+}
+
+/* 列表样式（垂直流式，大间距） */
+.elder-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--elder-space-md);
+}
+.elder-list-item {
+  background: var(--elder-bg-card);
+  border: 2px solid var(--elder-border);
+  border-radius: var(--elder-radius-md);
+  padding: var(--elder-space-md);
+  box-shadow: var(--elder-shadow-sm);
+}
+
+/* 状态标签（带文字+背景，不依赖颜色） */
+.elder-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  font-size: var(--elder-fs-base);
+  font-weight: 600;
+  border-radius: 30px;
+  border: 1.5px solid currentColor;
+}
+.elder-badge-success {
+  background: var(--elder-success-bg);
+  color: #1f4a36;
+  border-color: #2c6b4b;
+}
+.elder-badge-warning {
+  background: var(--elder-warning-bg);
+  color: #7a521e;
+  border-color: #b87c2c;
+}
+.elder-badge-error {
+  background: var(--elder-error-bg);
+  color: #a83a3a;
+  border-color: #b85c5c;
+}
+
+/* 移动端适配（默认即为移动优先） */
+@media (max-width: 480px) {
+  :root {
+    --elder-fs-base: 16px;
+    --elder-fs-large: 20px;
+  }
+  .elder-btn {
+    padding: 0 var(--elder-space-md);
+  }
+}

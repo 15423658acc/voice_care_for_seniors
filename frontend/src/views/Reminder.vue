@@ -1,32 +1,32 @@
 <template>
-  <div class="reminder-container">
+  <div class="elder-reminder">
     <h1 class="page-title">💊 吃药提醒</h1>
 
     <!-- 提醒列表 -->
     <div v-if="reminders.length === 0" class="empty">今日暂无提醒</div>
-    <ul class="reminder-list">
-      <li v-for="item in reminders" :key="item.id" class="reminder-item">
-        <span class="time">{{ formatTime(item) }}</span>
-        <span class="medicine">{{ item.medicine }}</span>
-        <!-- 周期标签（如有） -->
-        <span v-if="item.repeatType && item.repeatType !== 'none'" class="repeat-badge">
-          {{ repeatTypeText(item.repeatType) }}
-        </span>
-        <!-- <span class="status" :class="{ taken: item.taken }"> {{ item.taken ? '已吃' : '待提醒' }}</span> -->
-        <span class="status" :class="getStatusClass(item)">
-          {{ getStatusText(item) }}
-        </span>
-      </li>
-    </ul>
+     <div v-else class="reminder-list">
+      <div v-for="item in reminders" :key="item.id" class="reminder-item">
+        <div class="item-time">{{ formatTime(item) }}</div>
+        <div class="item-medicine">{{ item.medicine }}</div>
+        <div class="item-meta">
+          <span v-if="item.repeatType && item.repeatType !== 'none'" class="repeat-badge">
+            {{ repeatTypeText(item.repeatType) }}
+          </span>
+          <span class="status-badge" :class="getStatusClass(item)">
+            {{ getStatusText(item) }}
+          </span>
+        </div>
+      </div>
+     </div>
 
     <!-- == 自动开启推送：播报前自动开启播报，播报后重新调用后端接口 /reminders/today，获取最新的提醒数据。 ========== -->
     <!-- 1. 推送订阅按钮（高对比度绿色大按钮） -->
-    <button v-if="!pushSubscribed" @click="enablePush" class="push-btn">
+    <button v-if="!pushSubscribed" @click="enablePush" class="elder-btn elder-btn-success push-btn">
       🔔 点击打开推送提醒
     </button>
 
     <!-- 2. 语音激活按钮（放在推送按钮下方） -->
-    <button v-if="!speechEnabled" @click="enableSpeech" class="voice-activate-btn">
+    <button v-if="!speechEnabled" @click="enableSpeech" class="elder-btn elder-btn-warning voice-btn">
       🔊 开启语音播报
     </button>
   </div>
@@ -211,156 +211,85 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* ========== 全局字体：至少 20px，移动端友好 ========== */
-.reminder-container {
-  padding: 1rem;
-  font-size: 20px;           /* 基础字体 20px */
-}
+@import '@/assets/elder.css';
 
-/* 标题字体更大 */
-.page-title {
-  font-size: 28px;           /* 符合 24px 以上要求 */
+.elder-reminder {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--elder-space-md);
+}
+.page-heading {
+  font-size: var(--elder-fs-3xl);
+  font-weight: 700;
+  margin-bottom: var(--elder-space-lg);
   text-align: center;
-  margin-bottom: 2rem;
-  font-weight: 500;
 }
 
-/* 空状态提示 */
+.reminder-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--elder-space-md);
+}
+.reminder-item {
+  background: var(--elder-bg-card);
+  border: 3px solid var(--elder-border-dark);
+  border-radius: var(--elder-radius-lg);
+  padding: var(--elder-space-md);
+}
+.item-time {
+  font-size: var(--elder-fs-2xl);
+  font-weight: 700;
+  color: var(--elder-primary);
+  margin-bottom: var(--elder-space-xs);
+}
+.item-medicine {
+  font-size: var(--elder-fs-3xl);
+  font-weight: 700;
+  margin-bottom: var(--elder-space-sm);
+}
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--elder-space-sm);
+}
+.repeat-badge {
+  font-size: var(--elder-fs-base);
+  background: var(--elder-border);
+  padding: 6px 18px;
+  border-radius: 30px;
+  font-weight: 600;
+}
+.status-badge {
+  font-size: var(--elder-fs-large);
+  font-weight: 700;
+  padding: 6px 24px;
+  border-radius: 30px;
+  border: 2px solid;
+}
+.status-badge.taken {
+  background: var(--elder-success-bg);
+  border-color: #2c6b4b;
+  color: #1f4a36;
+}
+.status-badge.failure {
+  background: var(--elder-error-bg);
+  border-color: #b85c5c;
+  color: #a83a3a;
+}
+.status-badge:not(.taken):not(.failure) {
+  background: var(--elder-warning-bg);
+  border-color: #b87c2c;
+  color: #7a521e;
+}
+
+.push-btn, .voice-btn {
+  width: 100%;
+  margin-top: var(--elder-space-lg);
+}
 .empty {
   text-align: center;
-  font-size: 20px;
-  color: #666;
-  padding: 2rem;
-}
-
-/* ========== 提醒列表样式 ========== */
-.reminder-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.reminder-item {
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 0.5rem;
-  border-bottom: 1px solid #eee;
-  flex-wrap: wrap;          /* 移动端换行适配 */
-  gap: 0.5rem;
-}
-
-/* 时间 */
-.time {
-  font-weight: bold;
-  color: #333;
-  min-width: 80px;
-}
-
-/* 药品名：加粗 + 深色 #2c3e50 */
-.medicine {
-  flex: 1;
-  margin-left: 0.5rem;
-  font-weight: bold;
-  color: #2c3e50;
-  word-break: break-word;
-}
-
-/* 周期标签 */
-.repeat-badge {
-  background-color: #e0e0e0;
-  color: #555;
-  font-size: 0.75rem;       /* 相对 20px 的 15px */
-  padding: 0.2rem 0.6rem;
-  border-radius: 1rem;
-  white-space: nowrap;
-}
-
-/* 状态标签 */
-.status {
-  padding: 0.3rem 0.8rem;
-  border-radius: 1.5rem;
-  background-color: #f0f0f0;
-  font-size: 0.9rem;
-}
-.status.taken {
-  background-color: #4caf50;
-  color: white;
-}
-
-/* ========== 按钮样式（移动端触控优化） ========== */
-/* 推送按钮：高对比度绿色，大圆角，高度≥56px */
-.push-btn {
-  background-color: #4caf50;    /* 高对比度绿色 */
-  color: white;
-  font-size: 1.2rem;           /* 相对 20px 的 24px */
-  font-weight: bold;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 2rem;          /* 大圆角 */
-  width: 100%;
-  margin-top: 1.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-height: 56px;             /* 符合移动端触控标准 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.push-btn:active {
-  background-color: #388e3c;
-}
-
-/* 语音按钮：放在推送按钮下方，样式稍低调但同样触控友好 */
-.voice-activate-btn {
-  background-color: #ff9800;
-  color: white;
-  font-size: 1.2rem;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 2rem;
-  width: 100%;
-  margin-top: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.voice-activate-btn:active {
-  background-color: #f57c00;
-}
-
-/* ========== 移动端额外适配 ========== */
-@media (max-width: 480px) {
-  .reminder-container {
-    padding: 0.75rem;
-  }
-  .reminder-item {
-    font-size: 18px;       /* 最小 18px，但仍接近 20px 要求 */
-    padding: 0.8rem 0.3rem;
-  }
-  .time {
-    min-width: 70px;
-  }
-  .medicine {
-    font-size: 18px;
-  }
-  .repeat-badge {
-    font-size: 0.7rem;
-  }
-  /* 确保按钮高度仍然足够 */
-  .push-btn, .voice-activate-btn {
-    min-height: 52px;      /* 稍小但仍在 48px 以上，可接受 */
-    font-size: 1.1rem;
-  }
-}
-
-/* 添加红色失败状态样式 */
-.status.failure {
-  background-color: #f44336;  /* 红色背景 */
-  color: white;
+  font-size: var(--elder-fs-xl);
+  padding: var(--elder-space-xl);
+  color: var(--elder-text-muted);
 }
 </style>

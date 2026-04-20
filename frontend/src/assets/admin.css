@@ -190,7 +190,7 @@ th {
   white-space: nowrap;
 }
 td {
-  padding: 16px 20px;
+  padding: 16px 15px;
   border-bottom: 1px solid var(--gray-200);
   color: var(--text-main);
 }

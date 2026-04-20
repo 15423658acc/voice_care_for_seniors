@@ -1,19 +1,29 @@
 <template>
   <div class="weather">
-    <h1 class="page-title">☀️ 实时天气</h1>
+    <h1 class="page-title">天气</h1>
 
-    <!-- ========== 原有手动查询区域（完全保留） ========== -->
-    <div class="city-selector">
-      <label for="city">城市：</label>
-      <input id="city" v-model="city" type="text" placeholder="输入城市名" class="city-input" />
-      <button @click="fetchWeather" class="query-btn" :disabled="loading">查询</button>
+    <!-- 查询区域：输入框 + 按钮横排 -->
+    <div class="search-row">
+      <input id="city" v-model="city" type="text" placeholder="输入城市名" class="elder-input search-input" />
+      <button @click="fetchWeather" class="elder-btn elder-btn-primary search-btn" :disabled="loading">查询</button>
     </div>
-    <div class="common-cities">
+
+    <!-- 自动定位按钮 -->
+    <button
+      @click="fetchWeatherByLocation"
+      class="elder-btn elder-btn-success auto-locate-btn"
+      :disabled="locationLoading"
+    >
+      📍 自动定位查天气
+    </button>
+    <p v-if="locationError" class="error-msg">{{ locationError }}</p>
+
+    <div class="city-chips">
       <button
         v-for="c in commonCities"
         :key="c"
         @click="selectCity(c)"
-        class="city-btn"
+        class="city-chip"
         :disabled="loading"
       >
         {{ c }}
@@ -21,59 +31,40 @@
     </div>
 
     <!-- 原有天气展示（今日天气） -->
-    <div v-if="loading" class="weather-info loading">
-      <p>加载中...</p>
-    </div>
-    <div v-else-if="weather" class="weather-info">
-      <p class="city">{{ weather.city }}</p>
-      <p class="temp">{{ weather.temperature }}°C</p>
-      <p class="desc">{{ weather.description }}</p>
-      <p class="humidity">相对湿度：{{ weather.humidity }}%</p>
-    </div>
-
-    <!-- 原有语音播报按钮 -->
-    <button @click="speakWeather" class="speak-btn" :disabled="!weather || loading">
-      语音播报（今日）
-    </button>
-
-    <!-- ========== 新增：自动定位查天气区域 ========== -->
-    <div class="auto-location-section">
-      <button
-        @click="fetchWeatherByLocation"
-        class="auto-location-btn"
-        :disabled="locationLoading"
-      >
-        📍 自动定位查天气
-      </button>
-      <p v-if="locationError" class="error small">{{ locationError }}</p>
+    <div v-if="loading" class="loading-state">加载中...</div>
+    <div v-else-if="weather" class="current-weather">
+      <div class="city-name">{{ weather.city }}</div>
+      <div class="temperature">{{ weather.temperature }}°</div>
+      <div class="weather-desc">{{ weather.description }}</div>
+      <div class="humidity">相对湿度 {{ weather.humidity }}%</div>
     </div>
 
     <!-- ========== 新增：3天预报 + 昨日历史展示 ========== -->
-    <div v-if="extendedWeather" class="extended-weather">
+    <div v-if="extendedWeather" class="forecast-section">
       <!-- 3天预报 -->
-      <div class="forecast-section">
-        <h3>📅 未来3天天气</h3>
-        <div class="forecast-list">
-          <div v-for="day in extendedWeather.forecast" :key="day.date" class="forecast-card">
-            <div class="date">{{ formatDate(day.date) }}</div>
-            <div class="temp">{{ day.tempMax }}° / {{ day.tempMin }}°</div>
-            <div class="desc">{{ day.textDay }}</div>
-          </div>
+       <h3>未来三天</h3>
+        <div class="forecast-list-vertical">
+        <div v-for="day in extendedWeather.forecast" :key="day.date" class="forecast-item">
+          <span class="forecast-date">{{ formatDate(day.date) }}</span>
+          <span class="forecast-icon">{{ getWeatherIcon(day.textDay) }}</span>
+          <span class="forecast-temp">{{ day.tempMax }}° / {{ day.tempMin }}°</span>
+          <span class="forecast-text">{{ day.textDay }}</span>
         </div>
       </div>
 
-      <!-- 昨日历史 -->
-      <div class="yesterday-section" v-if="extendedWeather.yesterday">
-        <h3>📆 昨日天气回顾</h3>
-        <div class="yesterday-card">
-          <div class="date">{{ formatDate(extendedWeather.yesterday.date) }}</div>
-          <div class="temp">最高 {{ extendedWeather.yesterday.tempMax }}° / 最低 {{ extendedWeather.yesterday.tempMin }}°</div>
-          <div class="desc">{{ extendedWeather.yesterday.textDay }}</div>
+      <!-- 昨日回顾 -->
+      <div v-if="extendedWeather.yesterday" class="yesterday-item">
+        <h3>昨日</h3>
+        <div class="forecast-item">
+          <span class="forecast-date">{{ formatDate(extendedWeather.yesterday.date) }}</span>
+          <span class="forecast-icon">{{ getWeatherIcon(extendedWeather.yesterday.textDay) }}</span>
+          <span class="forecast-temp">{{ extendedWeather.yesterday.tempMax }}° / {{ extendedWeather.yesterday.tempMin }}°</span>
+          <span class="forecast-text">{{ extendedWeather.yesterday.textDay }}</span>
         </div>
       </div>
 
       <!-- 完整语音播报按钮 -->
-      <button @click="speakFullWeather" class="speak-full-btn" v-if="extendedWeather">
+      <button @click="speakFullWeather" class="elder-btn elder-btn-warning speak-btn" v-if="extendedWeather">
         🔊 播报完整天气
       </button>
     </div>
@@ -100,7 +91,16 @@ const extendedWeather = ref(null)      // 存储扩展天气（预报+历史）
 const locationLoading = ref(false)     // 定位查天气的加载状态
 const locationError = ref('')          // 定位错误信息
 
-// ========== 原有函数（未改动） ==========
+// 图标映射
+const getWeatherIcon = (text) => {
+  if (text.includes('晴')) return '☀️'
+  if (text.includes('云')) return '☁️'
+  if (text.includes('雨')) return '🌧️'
+  if (text.includes('雪')) return '❄️'
+  return '🌤️'
+}
+
+// ========== 原有函数 ==========
 const selectCity = (selectedCity) => {
   if (loading.value) return
   city.value = selectedCity
@@ -263,60 +263,143 @@ fetchWeather()
 </script>
 
 <style scoped>
-/* 保留原有样式，新增突出自动定位按钮样式 */
-.auto-location-section {
-  margin: 20px 0;
+@import '@/assets/elder.css';
+
+.elder-weather {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--elder-space-md);
+}
+.page-heading {
+  font-size: var(--elder-fs-3xl);
+  font-weight: 700;
+  margin-bottom: var(--elder-space-lg);
   text-align: center;
 }
-.auto-location-btn {
-  background: #4caf50;
-  color: white;
-  font-size: 1.2rem;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 40px;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  transition: transform 0.1s;
+
+/* 搜索行 */
+.search-row {
+  display: flex;
+  gap: var(--elder-space-sm);
+  margin-bottom: var(--elder-space-md);
 }
-.auto-location-btn:hover {
-  transform: scale(1.02);
-  background: #45a049;
+.search-input {
+  flex: 1;
 }
-.auto-location-btn:disabled {
-  background: #9e9e9e;
-  cursor: not-allowed;
+.search-btn {
+  min-width: 100px;
 }
-.extended-weather {
-  margin-top: 24px;
-  border-top: 1px solid #ddd;
-  padding-top: 16px;
+
+/* 自动定位按钮 */
+.auto-locate-btn {
+  width: 100%;
+  margin-bottom: var(--elder-space-md);
 }
-.forecast-list {
+
+/* 城市芯片 */
+.city-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  justify-content: space-between;
+  gap: var(--elder-space-sm);
+  margin-bottom: var(--elder-space-lg);
 }
-.forecast-card, .yesterday-card {
-  background: #f5f5f5;
-  border-radius: 12px;
-  padding: 12px;
-  flex: 1;
-  min-width: 100px;
+.city-chip {
+  background: var(--elder-bg-card);
+  border: 2px solid var(--elder-border-dark);
+  border-radius: 40px;
+  padding: 12px 24px;
+  font-size: var(--elder-fs-large);
+  font-weight: 600;
+  color: var(--elder-text-primary);
+  cursor: pointer;
+  flex: 0 1 auto;
+}
+.city-chip:active {
+  background: var(--elder-border);
+}
+
+/* 当前天气 */
+.current-weather {
+  text-align: center;
+  padding: var(--elder-space-lg) 0;
+}
+.city-name {
+  font-size: var(--elder-fs-2xl);
+  font-weight: 600;
+  margin-bottom: var(--elder-space-xs);
+}
+.temperature {
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--elder-primary);
+}
+.weather-desc {
+  font-size: var(--elder-fs-xl);
+  font-weight: 500;
+  margin: var(--elder-space-sm) 0;
+}
+.humidity {
+  font-size: var(--elder-fs-large);
+  color: var(--elder-text-secondary);
+}
+
+/* 预报区域 */
+.forecast-section {
+  margin-top: var(--elder-space-xl);
+}
+.forecast-section h3 {
+  font-size: var(--elder-fs-xl);
+  margin-bottom: var(--elder-space-md);
+}
+.forecast-list-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: var(--elder-space-sm);
+}
+.forecast-item, .yesterday-item .forecast-item {
+  display: flex;
+  align-items: center;
+  gap: var(--elder-space-sm);
+  background: var(--elder-bg-card);
+  border: 2px solid var(--elder-border);
+  border-radius: var(--elder-radius-md);
+  padding: var(--elder-space-sm) var(--elder-space-md);
+}
+.forecast-date {
+  font-size: var(--elder-fs-large);
+  font-weight: 600;
+  min-width: 80px;
+}
+.forecast-icon {
+  font-size: 40px;
+  width: 60px;
   text-align: center;
 }
-.speak-full-btn {
-  margin-top: 16px;
-  background: #ff9800;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
+.forecast-temp {
+  font-size: var(--elder-fs-large);
+  font-weight: 700;
+  flex: 1;
 }
-.error.small {
-  font-size: 0.8rem;
-  color: #f44336;
+.forecast-text {
+  font-size: var(--elder-fs-base);
+  color: var(--elder-text-secondary);
+}
+
+/* 语音播报按钮 */
+.speak-btn {
+  width: 100%;
+  margin-top: var(--elder-space-lg);
+}
+
+.error-msg {
+  color: #b85c5c;
+  font-size: var(--elder-fs-base);
+  margin: var(--elder-space-sm) 0;
+}
+.loading-state {
+  text-align: center;
+  font-size: var(--elder-fs-xl);
+  padding: var(--elder-space-xl);
 }
 </style>

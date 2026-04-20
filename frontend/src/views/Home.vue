@@ -1,13 +1,13 @@
 <template>
-  <div class="home">
+  <div class="elder-home">
     <!-- 右上角跳转管理端按钮 -->
-    <button class="admin-redirect-btn" @click="handleGoAdmin">🔧 跳转管理端</button>
+    <!-- <button class="admin-redirect-btn" @click="handleGoAdmin">🔧 跳转管理端</button> -->
 
     <!-- 紧急呼救超大按钮区域 -->
-    <div class="emergency-section">
+    <div class="emergency-area">
       <button
         ref="emergencyBtn"
-        class="emergency-mega-btn"
+        class="emergency-btn"
         :class="{ shaking: isShaking }"
         @mousedown="startEmergency"
         @mouseup="cancelEmergencyByUser"
@@ -16,30 +16,50 @@
         @touchend="cancelEmergencyByUser"
         @touchcancel="cancelEmergencyByUser"
       >
-        🚨 紧急呼救
+        <span class="emergency-icon">📞</span>
+        <span class="emergency-text">找家人</span>
       </button>
-      <p v-if="countdown > 0" class="countdown-text">
+      <p v-if="countdown > 0" class="countdown-tip">
         将在 {{ countdown }} 秒后自动呼救
       </p>
       <button
         v-if="showCancelBtn"
-        class="cancel-btn"
+        class="cancel-emergency-btn"
         @click="cancelEmergencyFinal"
       >
         ❌ 取消
       </button>
-      <p v-if="statusText" class="status-text">{{ statusText }}</p>
+      <p v-if="statusText" class="status-message">{{ statusText }}</p>
     </div>
 
-    <h1 class="welcome">老友助手</h1>
-    <div class="grid">
-      <router-link to="/reminder" class="card reminder">💊 吃药提醒</router-link>
-      <router-link to="/weather" class="card weather">☀️ 天气</router-link>
-      <router-link to="/voiceAssistant" class="card voice">🎤 语音助手</router-link>
-      <router-link to="/healthRecords" class="card health">📋 健康记录</router-link>
-      <router-link to="/profile" class="card profile">👤 个人中心</router-link>
+    <h2 class="greeting">老友助手</h2>
+
+    <!-- 四格功能卡片 -->
+    <div class="feature-grid">
+      <router-link to="/reminder" class="feature-card">
+        <span class="feature-icon">💊</span>
+        <span class="feature-label">吃药提醒</span>
+      </router-link>
+      <router-link to="/voiceAssistant" class="feature-card">
+        <span class="feature-icon">🎤</span>
+        <span class="feature-label">语音助手</span>
+      </router-link>
+      <router-link to="/weather" class="feature-card">
+        <span class="feature-icon">☀️</span>
+        <span class="feature-label">查天气</span>
+      </router-link>
+      <router-link to="/healthRecords" class="feature-card">
+        <span class="feature-icon">📋</span>
+        <span class="feature-label">健康记录</span>
+      </router-link>
     </div>
-    <button class="logout-btn" @click="handleLogout">🚪 退出登录</button>
+
+    <!-- 底部操作：管理端入口 + 退出登录，低调并排 -->
+    <div class="footer-actions">
+      <button @click="handleGoAdmin" class="footer-btn">🔧 管理端</button>
+      <button @click="handleLogout" class="footer-btn">🚪 退出</button>
+    </div>
+
   </div>
 </template>
 
@@ -295,133 +315,153 @@ const handleGoAdmin = () => {
 };
 </script>
 
-
-
 <style scoped>
-/* 样式与原来保持一致，仅作微调确保适老化 */
-.home {
-  position: relative;
-  padding: 1rem;
+@import '@/assets/elder.css';
+
+.elder-home {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-.emergency-section {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-.emergency-mega-btn {
-  width: 90%;
-  max-width: 400px;
-  height: 140px;
-  background-color: #FF2B2B;
-  color: white;
-  font-size: 38px;
-  font-weight: bold;
-  border: none;
-  border-radius: 70px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  transition: transform 0.1s;
-  user-select: none;
-  touch-action: manipulation;
+  padding: var(--elder-space-md);
+  max-width: 600px;
   margin: 0 auto;
-  display: block;
+}
+
+/* 紧急区域 */
+.emergency-area {
+  text-align: center;
+  margin: var(--elder-space-lg) 0;
+}
+.emergency-btn {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff1e0;
+  border: 5px solid #b85c2c;
+  border-radius: 80px;
+  padding: var(--elder-space-xl) var(--elder-space-lg);
+  box-shadow: var(--elder-shadow-md);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.1s;
+}
+.emergency-btn:active {
+  background: #ffe0c0;
+  transform: scale(0.98);
+}
+.emergency-icon {
+  font-size: 80px;
+  line-height: 1;
+  margin-bottom: var(--elder-space-sm);
+}
+.emergency-text {
+  font-size: 56px;
+  font-weight: 700;
+  color: #7a3e1a;
+  letter-spacing: 4px;
 }
 .shaking {
   animation: shake 0.1s infinite;
 }
 @keyframes shake {
   0% { transform: translate(1px, 1px) rotate(0deg); }
-  25% { transform: translate(-1px, -2px) rotate(-1deg); }
-  50% { transform: translate(-3px, 0px) rotate(1deg); }
-  75% { transform: translate(3px, 2px) rotate(0deg); }
-  100% { transform: translate(1px, -1px) rotate(1deg); }
+  25% { transform: translate(-2px, -2px) rotate(-1deg); }
+  50% { transform: translate(-4px, 0px) rotate(1deg); }
+  75% { transform: translate(4px, 2px) rotate(0deg); }
+  100% { transform: translate(2px, -1px) rotate(1deg); }
 }
-.countdown-text {
-  font-size: 22px;
-  color: #d32f2f;
-  margin: 10px 0 5px;
-  font-weight: bold;
+.countdown-tip {
+  font-size: var(--elder-fs-xl);
+  font-weight: 600;
+  color: #b85c2c;
+  margin: var(--elder-space-sm) 0;
 }
-.cancel-btn {
-  background-color: #ffffff;
-  color: #FF2B2B;
-  border: 3px solid #FF2B2B;
-  border-radius: 50px;
-  font-size: 28px;
-  padding: 10px 30px;
-  margin-top: 10px;
+.cancel-emergency-btn {
+  background: white;
+  border: 4px solid #b85c2c;
+  border-radius: 60px;
+  font-size: var(--elder-fs-xl);
+  font-weight: 700;
+  padding: var(--elder-space-md) var(--elder-space-xl);
+  color: #b85c2c;
   cursor: pointer;
-  font-weight: bold;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  margin-top: var(--elder-space-sm);
+  width: 100%;
+  max-width: 300px;
 }
-.cancel-btn:active {
-  background-color: #FF2B2B;
-  color: white;
+.status-message {
+  font-size: var(--elder-fs-large);
+  color: var(--elder-text-secondary);
+  margin-top: var(--elder-space-md);
 }
-.status-text {
-  font-size: 22px;
-  color: #333;
-  margin-top: 15px;
+
+/* 欢迎语 */
+.greeting {
+  font-size: var(--elder-fs-2xl);
+  text-align: center;
+  margin: var(--elder-space-md) 0;
   font-weight: 500;
 }
-.welcome {
-  font-size: 2.2rem;
-  text-align: center;
-  margin: 1rem 0 1.5rem;
-}
-.grid {
+
+/* 四格卡片 */
+.feature-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  flex: 1;
+  gap: var(--elder-space-md);
+  margin: var(--elder-space-lg) 0;
 }
-.card {
+.feature-card {
+  background: var(--elder-bg-card);
+  border: 3px solid var(--elder-border-dark);
+  border-radius: var(--elder-radius-lg);
+  padding: var(--elder-space-lg) var(--elder-space-sm);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #f0f0f0;
-  padding: 1.8rem 0.5rem;
-  font-size: 1.8rem;
   text-decoration: none;
-  color: #333;
-  border-radius: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  min-height: 130px;
-  text-align: center;
+  color: var(--elder-text-primary);
+  box-shadow: var(--elder-shadow-sm);
+  transition: all 0.1s;
+  min-height: 160px;
 }
-.reminder { background-color: #e8f5e8; color: #2e7d32; }
-.voice { background-color: #fff3e0; color: #ef6c00; }
-.fraud { background-color: #ede7f6; color: #512da8; }
-.weather { background-color: #e1f5fe; color: #0277bd; }
-.health { background-color: #fce4ec; color: #c2185b; }
-.admin-redirect-btn {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  background-color: #2196f3;
-  color: white;
-  font-size: 1.4rem;
-  padding: 0.8rem 1.2rem;
-  border: none;
-  border-radius: 2rem;
-  cursor: pointer;
-  z-index: 100;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+.feature-card:active {
+  background: var(--elder-primary-light);
+  transform: scale(0.97);
 }
-.logout-btn {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  background-color: #f44336;
-  color: white;
-  font-size: 1.4rem;
-  padding: 0.8rem 1.2rem;
-  border: none;
-  border-radius: 2rem;
+.feature-icon {
+  font-size: 64px;
+  margin-bottom: var(--elder-space-sm);
+}
+.feature-label {
+  font-size: var(--elder-fs-xl);
+  font-weight: 600;
+}
+
+/* 底部操作按钮 */
+.footer-actions {
+  display: flex;
+  gap: var(--elder-space-md);
+  margin-top: auto;
+  padding: var(--elder-space-lg) 0;
+}
+.footer-btn {
+  flex: 1;
+  background: transparent;
+  border: 2px solid var(--elder-border-dark);
+  border-radius: 40px;
+  padding: var(--elder-space-sm);
+  font-size: var(--elder-fs-large);
+  font-weight: 500;
+  color: var(--elder-text-secondary);
   cursor: pointer;
-  z-index: 100;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  min-height: 56px;
+}
+.footer-btn:active {
+  background: var(--elder-border);
 }
 </style>

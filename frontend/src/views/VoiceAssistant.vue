@@ -1,6 +1,6 @@
 <template>
-  <div class="voice-assistant">
-    <h1 class="page-title">🎤 语音助手</h1>
+   <div class="elder-voice">
+    <p class="instruction">点击按钮后说话，说完自动停止</p>
     
     <!-- 麦克风按钮（大号，适老化） -->
      <!-- 对于ref：给这个 DOM 元素起个名字，方便在 JS 里直接访问它（类似 document.getElementById）。 -->
@@ -8,27 +8,25 @@
      不用手动写JS去操作DOM添加删除类名，Vue全自动处理,(类名: 布尔变量) -->
      <button
       ref="micButton"
-      class="voice-btn"
+      class="mic-mega-btn"
       :class="{ listening: isListening }"
       @click="handleMicClick"
       :disabled="isProcessing"
     >
       <span class="mic-icon">{{ isListening ? '🎙️' : '🎤' }}</span>
-      <span class="btn-text">{{ isListening ? '聆听中...' : '点击说话' }}</span>
+      <span class="mic-label">{{ isListening ? '聆听中...' : '点击说话' }}</span>
     </button>
     
-    <p class="hint">点击按钮后说话，说完自动停止</p>
-
     <!-- 识别结果显示区 -->
-    <div v-if="recognizedText" class="result-box">
+    <div v-if="recognizedText" class="recognized-box">
       <p class="label">您说：</p>
-      <p class="recognized-text">{{ recognizedText }}</p>
+      <p class="content">{{ recognizedText }}</p>
     </div>
 
     <!-- 助手回复区：v-if只有当 recognizedText 变量有内容（非空字符串）时，才显示这个区域。 -->
     <div v-if="assistantReply" class="reply-box">
       <p class="label">助手回复：</p>
-      <p class="reply-text">{{ assistantReply }}</p>
+      <p class="content">{{ assistantReply }}</p>
     </div>
 
     <!-- 反问选项（当匹配模糊时显示可点击选项） -->
@@ -40,7 +38,7 @@
           v-for="opt in currentOptions"
           :key="opt.action"
           @click="selectOption(opt.action)"
-          class="option-btn"
+          class="elder-btn"
         >
         <!-- @click="selectOption(opt.action)"：点击按钮时，把该选项的 action 传给 selectOption 函数。 -->
           {{ opt.label }}
@@ -49,17 +47,17 @@
     </div>
 
     <!-- 手动输入区域（当麦克风权限被拒绝时显示） -->
-    <div v-if="showManualInput" class="manual-input-area">
+    <div v-if="showManualInput" class="manual-area">
       <p class="manual-hint">您也可以直接打字告诉我：</p>
-      <div class="input-group">
+      <div class="manual-row">
         <!-- v-model="manualText"：双向绑定，输入框的内容会同步到 manualText 变量，改变 manualText 也会改变输入框。在输入框里按回车键，执行 submitManualText。         -->
         <input
           v-model="manualText"
           @keyup.enter="submitManualText"
           placeholder="例如：查天气"
-          class="manual-input"
+          class="elder-input"
         />
-        <button @click="submitManualText" class="send-btn">发送</button>
+        <button @click="submitManualText" class="elder-btn elder-btn-primary">发送</button>
       </div>
     </div>
   </div>
@@ -474,132 +472,123 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.voice-assistant {
+@import '@/assets/elder.css';
+
+.elder-voice {
   max-width: 600px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: var(--elder-space-lg) var(--elder-space-md);
   text-align: center;
 }
-.page-title {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-  color: #2c3e50;
+
+.instruction {
+  font-size: var(--elder-fs-large);
+  color: var(--elder-text-secondary);
+  margin-bottom: var(--elder-space-xl);
 }
-.voice-btn {
-  width: 200px;
-  height: 200px;
+
+/* 超大麦克风按钮 */
+.mic-mega-btn {
+  width: 280px;
+  height: 280px;
   border-radius: 50%;
-  background: #4caf50;
-  border: none;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-  cursor: pointer;
+  background: var(--elder-bg-card);
+  border: 6px solid var(--elder-primary);
+  box-shadow: var(--elder-shadow-md);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1rem;
-  transition: all 0.2s;
+  margin: 0 auto var(--elder-space-xl);
+  cursor: pointer;
+  transition: all 0.15s;
+  touch-action: manipulation;
 }
-.voice-btn.listening {
-  background: #f44336;
-  animation: pulse 1.5s infinite;
+.mic-mega-btn:active {
+  background: var(--elder-primary-light);
+  transform: scale(0.96);
 }
-.voice-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.mic-mega-btn.active {
+  background: var(--elder-warning-bg);
+  border-color: #b87c2c;
 }
 .mic-icon {
-  font-size: 4rem;
-  margin-bottom: 0.5rem;
+  font-size: 100px;
+  line-height: 1;
 }
-.btn-text {
-  font-size: 1.4rem;
-  color: white;
-  font-weight: bold;
+.mic-label {
+  font-size: var(--elder-fs-xl);
+  font-weight: 700;
+  margin-top: var(--elder-space-sm);
+  color: var(--elder-text-primary);
 }
-.hint {
-  font-size: 1.4rem;
-  color: #666;
-  margin-bottom: 2rem;
-}
-.result-box, .reply-box {
-  background: #f5f5f5;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  margin-bottom: 1rem;
+
+/* 识别与回复框 */
+.recognized-box, .reply-box {
+  background: var(--elder-bg-card);
+  border: 3px solid var(--elder-border-dark);
+  border-radius: var(--elder-radius-lg);
+  padding: var(--elder-space-md);
+  margin-bottom: var(--elder-space-lg);
   text-align: left;
 }
 .label {
-  font-size: 1.2rem;
-  color: #888;
-  margin-bottom: 0.5rem;
+  font-size: var(--elder-fs-base);
+  color: var(--elder-text-muted);
+  margin-bottom: var(--elder-space-xs);
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
-.recognized-text, .reply-text {
-  font-size: 1.8rem;
-  font-weight: 500;
-  color: #333;
+.content {
+  font-size: var(--elder-fs-2xl);
+  font-weight: 600;
+  line-height: 1.5;
   word-break: break-word;
 }
+.recognized-box .content {
+  color: var(--elder-primary);
+}
+.reply-box .content {
+  color: #1f4a36; /* 深绿色 */
+}
+
+/* 选项面板 */
 .options-panel {
-  background: #fff9c4;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  margin-top: 1rem;
+  background: var(--elder-bg-card);
+  border: 3px solid var(--elder-border);
+  border-radius: var(--elder-radius-lg);
+  padding: var(--elder-space-md);
+  margin-top: var(--elder-space-lg);
 }
 .question {
-  font-size: 1.6rem;
-  margin-bottom: 1rem;
+  font-size: var(--elder-fs-xl);
+  font-weight: 600;
+  margin-bottom: var(--elder-space-md);
 }
 .option-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center;
+  flex-direction: column;
+  gap: var(--elder-space-sm);
 }
-.option-btn {
-  background: #2196f3;
-  color: white;
-  border: none;
-  padding: 1rem 1.5rem;
-  font-size: 1.4rem;
-  border-radius: 2rem;
-  cursor: pointer;
-  min-width: 100px;
-}
-.manual-input-area {
-  margin-top: 2rem;
-  padding: 1rem;
-  background: #e0e0e0;
-  border-radius: 1rem;
-}
-.manual-hint {
-  font-size: 1.4rem;
-  margin-bottom: 0.5rem;
-}
-.input-group {
-  display: flex;
-  gap: 0.5rem;
-}
-.manual-input {
-  flex: 1;
-  padding: 1rem;
-  font-size: 1.6rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-}
-.send-btn {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 1rem 2rem;
-  font-size: 1.4rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
+.option-buttons .elder-btn {
+  width: 100%;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+/* 手动输入 */
+.manual-area {
+  margin-top: var(--elder-space-xl);
+  padding-top: var(--elder-space-md);
+  border-top: 2px dashed var(--elder-border);
+}
+.manual-hint {
+  font-size: var(--elder-fs-large);
+  margin-bottom: var(--elder-space-sm);
+}
+.manual-row {
+  display: flex;
+  gap: var(--elder-space-sm);
+}
+.manual-row .elder-input {
+  flex: 1;
 }
 </style>

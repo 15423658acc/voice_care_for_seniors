@@ -3,6 +3,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router' // 引入路由
 import './assets/admin.css'   // 全局管理员样式
+import './assets/elder.css'
 
 const app = createApp(App)
 app.use(router) // 使用路由插件

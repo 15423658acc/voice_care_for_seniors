@@ -1,9 +1,10 @@
 <template>
-  <div class="health-records">
-    <h1 class="page-title">📋 健康记录</h1>
-    <div class="actions">
-      <button class="add-btn" @click="openAddModal">➕ 新增记录</button>
-    </div>
+   <div class="elder-health">
+    <h1 class="page-heading">健康记录</h1>
+
+    <button @click="openAddModal" class="elder-btn elder-btn-primary add-btn">
+      ➕ 新增记录
+    </button>
 
     <!-- 加载中 -->
     <div v-if="loading" class="loading">加载中...</div>
@@ -12,49 +13,64 @@
     <!-- 记录列表 -->
     <div v-else class="record-list">
       <div v-for="item in records" :key="item.id" class="record-card" @click="viewDetail(item)">
+        <div class="card-header">
+          <span class="record-type-badge" :class="item.recordType">
+            {{ item.recordType === 'medicine' ? '💊 药品' : '🩺 体检' }}
+          </span>
+          <span class="record-date">{{ formatDate(item.recordDate) }}</span>
+        </div>
         <h3 class="record-title">{{ item.title }}</h3>
-        <p class="record-date">{{ formatDate(item.recordDate) }}</p>
-        <p class="record-type" :class="item.recordType">
-          {{ item.recordType === 'medicine' ? '药品' : '体检' }}
-        </p>
         <p class="record-content">{{ item.content }}</p>
       </div>
     </div>
+  </div>
 
     <!-- 新增/编辑模态框 -->
-    <div v-if="showModal" class="modal" @click.self="closeModal">
-      <div class="modal-content">
-        <h2>{{ isEdit ? '编辑记录' : '新增记录' }}</h2>
+    <div v-if="showModal" class="modal-mask" @click.self="closeModal">
+      <div class="modal-container">
+        <h2 class="modal-title">{{ isEdit ? '编辑记录' : '新增记录' }}</h2>
         <form @submit.prevent="submitRecord">
           <div class="form-group">
-            <label>标题 *</label>
-            <input v-model="form.title" required />
+            <label class="form-label">标题 <span class="required">*</span></label>
+            <input v-model="form.title" required class="elder-input" placeholder="例如：血压测量"  />
           </div>
+
           <div class="form-group">
-            <label>类型 *</label>
-            <select v-model="form.recordType" required>
-              <option value="medicine">药品</option>
-              <option value="checkup">体检</option>
+            <label class="form-label">类型 <span class="required">*</span></label>
+            <select v-model="form.recordType" required class="elder-select">
+              <option value="medicine">💊 药品</option>
+              <option value="checkup">🩺 体检</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label>记录日期</label>
-            <input type="date" v-model="form.recordDate" />
+            <label class="form-label">记录日期</label>
+            <input type="date" v-model="form.recordDate" class="elder-input" />
           </div>
-          <div class="form-group">
-            <label>详细内容</label>
-            <textarea v-model="form.content" rows="4"></textarea>
+
+           <div class="form-group">
+            <label class="form-label">详细内容</label>
+            <textarea
+              v-model="form.content"
+              rows="4"
+              class="elder-input"
+              placeholder="请输入详细内容"
+            ></textarea>
           </div>
-          <div class="form-buttons">
-            <button type="submit" :disabled="submitting">保存</button>
-            <button type="button" @click="closeModal">取消</button>
+
+          <div class="modal-actions">
+            <button type="submit" :disabled="submitting" class="elder-btn elder-btn-primary">
+              {{ submitting ? '保存中...' : '保存' }}
+            </button>
+            <button type="button" @click="closeModal" class="elder-btn">取消</button>
           </div>
+          
         </form>
       </div>
     </div>
 
     <!-- 详情模态框 -->
-    <div v-if="showDetail" class="modal" @click.self="showDetail = false">
+<!--     <div v-if="showDetail" class="modal" @click.self="showDetail = false">
       <div class="modal-content">
         <h2>{{ currentRecord.title }}</h2>
         <p><strong>类型：</strong>{{ currentRecord.recordType === 'medicine' ? '药品' : '体检' }}</p>
@@ -67,8 +83,24 @@
           <button @click="showDetail = false">关闭</button>
         </div>
       </div>
-    </div>
-  </div>
+    </div> -->
+            <div class="detail-field">
+          <span class="field-label">日期</span>
+          <span class="field-value">{{ formatDate(currentRecord.recordDate) }}</span>
+        </div>
+
+        <div class="detail-field">
+          <span class="field-label">详细内容</span>
+          <div class="field-content-box">{{ currentRecord.content }}</div>
+        </div>
+
+        <!-- 底部操作按钮（大、明显） -->
+        <div class="modal-actions">
+          <button @click="editRecord(currentRecord)" class="elder-btn">✏️ 编辑</button>
+          <button @click="deleteRecord(currentRecord.id)" class="elder-btn elder-btn-warning">🗑️ 删除</button>
+          <button @click="showDetail = false" class="elder-btn elder-btn-primary">关闭</button>
+        </div>
+        
 </template>
 
 <script setup>
@@ -196,149 +228,93 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 适老化大字体、大间距 */
-.health-records {
-  padding: 1rem;
+@import '@/assets/elder.css';
+
+.elder-health {
   max-width: 600px;
   margin: 0 auto;
+  padding: var(--elder-space-md);
 }
-.page-title {
-  font-size: 2rem;
+.page-heading {
+  font-size: var(--elder-fs-3xl);
+  font-weight: 700;
+  margin-bottom: var(--elder-space-lg);
   text-align: center;
-  margin-bottom: 1rem;
-}
-.actions {
-  text-align: right;
-  margin-bottom: 1rem;
 }
 .add-btn {
-  background-color: #4caf50;
-  color: white;
-  font-size: 1.4rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
+  width: 100%;
+  margin-bottom: var(--elder-space-lg);
 }
-.record-list {
+
+.records-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--elder-space-md);
 }
 .record-card {
-  background-color: #f9f9f9;
-  padding: 1rem;
-  border-radius: 0.5rem;
+  background: var(--elder-bg-card);
+  border: 3px solid var(--elder-border-dark);
+  border-radius: var(--elder-radius-lg);
+  padding: var(--elder-space-md);
+  box-shadow: var(--elder-shadow-sm);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.1s;
 }
-.record-card:hover {
-  background-color: #e0e0e0;
+.record-card:active {
+  background: var(--elder-primary-light);
+  transform: scale(0.99);
 }
-.record-title {
-  font-size: 1.6rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--elder-space-sm);
+}
+.record-type-badge {
+  font-size: var(--elder-fs-large);
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 40px;
+  border: 2px solid;
+}
+.record-type-badge.medicine {
+  background: #e6f0fa;
+  border-color: #2a5f7a;
+  color: #1a3f52;
+}
+.record-type-badge.checkup {
+  background: #e8f0e6;
+  border-color: #2c6b4b;
+  color: #1f4a36;
 }
 .record-date {
-  font-size: 1.2rem;
-  color: #666;
-  margin-bottom: 0.5rem;
+  font-size: var(--elder-fs-large);
+  font-weight: 600;
+  background: var(--elder-border);
+  padding: 6px 16px;
+  border-radius: 30px;
+  color: var(--elder-text-primary);
 }
-.record-type {
-  display: inline-block;
-  font-size: 1.2rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 0.3rem;
-  background-color: #ddd;
-}
-.record-type.medicine {
-  background-color: #ffebee;
-  color: #c62828;
-}
-.record-type.checkup {
-  background-color: #e0f2fe;
-  color: #0277bd;
+.record-title {
+  font-size: var(--elder-fs-2xl);
+  font-weight: 700;
+  margin: var(--elder-space-sm) 0;
 }
 .record-content {
-  font-size: 1.4rem;
-  margin-top: 0.5rem;
-  color: #333;
+  font-size: var(--elder-fs-large);
+  color: var(--elder-text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.modal-content {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 1rem;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80%;
-  overflow-y: auto;
-}
-.form-group {
-  margin-bottom: 1rem;
-}
-.form-group label {
-  display: block;
-  font-size: 1.4rem;
-  margin-bottom: 0.3rem;
-}
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 1.4rem;
-  border: 1px solid #ccc;
-  border-radius: 0.3rem;
-}
-.form-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 1rem;
-}
-.form-buttons button {
-  padding: 0.5rem 1rem;
-  font-size: 1.4rem;
-  border: none;
-  border-radius: 0.3rem;
-  cursor: pointer;
-}
-.form-buttons button[type="submit"] {
-  background-color: #4caf50;
-  color: white;
-}
-.form-buttons button[type="button"] {
-  background-color: #f44336;
-  color: white;
-}
+
 .loading, .empty {
   text-align: center;
-  font-size: 1.4rem;
-  color: #666;
-  margin-top: 2rem;
-}
-.detail-content {
-  white-space: pre-wrap;
-  font-size: 1.4rem;
-  margin-top: 0.5rem;
-  background: #f5f5f5;
-  padding: 0.5rem;
-  border-radius: 0.3rem;
+  font-size: var(--elder-fs-xl);
+  padding: var(--elder-space-xl);
+  color: var(--elder-text-muted);
 }
 </style>
