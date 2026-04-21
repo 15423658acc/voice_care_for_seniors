@@ -57,10 +57,10 @@
       </div>
 
       <!-- 协议勾选 -->
-      <div class="form-group checkbox">
-        <label>
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
           <input type="checkbox" v-model="form.agreeTerms" />
-          我已阅读并同意 <a href="#" @click.prevent="showAgreement">《用户协议》</a> 和 <a href="#" @click.prevent="showPrivacy">《隐私政策》</a>
+          <span>我已阅读并同意 <a href="#" @click.prevent="showAgreement">《用户协议》</a> 和 <a href="#" @click.prevent="showPrivacy">《隐私政策》</a></span>
         </label>
         <span class="error" v-if="errors.agreeTerms">{{ errors.agreeTerms }}</span>
       </div>
@@ -208,65 +208,206 @@ const showPrivacy = () => {
 </script>
 
 <style scoped>
-/* 保持适老化大字体 */
+/* ==================== 老人端注册页 · 适老化专业设计 ==================== */
+
 .register-container {
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 32px 24px;
+  background-color: #f7f6f2;      /* 柔和米白背景 */
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
+
 .title {
-  font-size: 2rem;
+  font-size: 36px;
+  font-weight: 700;
   text-align: center;
+  margin-bottom: 32px;
+  color: #1a232b;
+  letter-spacing: -0.01em;
 }
+
+.register-form {
+  background-color: #ffffff;
+  border: 3px solid #a0aab3;
+  border-radius: 32px;
+  padding: 36px 28px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+}
+
 .form-group {
-  margin-bottom: 1.2rem;
+  margin-bottom: 28px;
 }
+
 .form-group label {
   display: block;
-  font-size: 1.4rem;
-  margin-bottom: 0.3rem;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: #1a232b;
 }
-.form-group input, .form-group select {
+
+.required {
+  color: #b85c5c;
+  margin-left: 4px;
+}
+
+.form-group input {
   width: 100%;
-  padding: 0.8rem;
-  font-size: 1.4rem;
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
+  padding: 20px 20px;
+  font-size: 24px;
+  font-weight: 600;
+  border: 4px solid #a0aab3;
+  border-radius: 20px;
+  background-color: #ffffff;
+  color: #1a232b;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
 }
-.checkbox label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+
+.form-group input:focus {
+  border-color: #1e4f6b;
+  box-shadow: 0 0 0 6px rgba(30,79,107,0.1);
 }
-.checkbox input {
-  width: auto;
+
+.form-group input::placeholder {
+  color: #8a9aa5;
+  font-weight: 500;
+  opacity: 0.8;
 }
+
+/* 错误信息 */
 .error {
-  color: #f44336;
-  font-size: 1.2rem;
-  margin-top: 0.2rem;
   display: block;
+  color: #b85c5c;
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 8px;
+  padding-left: 8px;
 }
-small {
-  font-size: 1.2rem;
-  color: #666;
+
+/* 协议勾选 */
+.checkbox-group {
+  margin-top: 32px;
 }
-button {
-  width: 100%;
-  padding: 1rem;
-  font-size: 1.6rem;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a232b;
   cursor: pointer;
 }
-button:disabled {
-  background-color: #ccc;
+
+.checkbox-label input[type="checkbox"] {
+  width: 32px;
+  height: 32px;
+  margin-top: 2px;
+  accent-color: #1e4f6b;
+  border: 3px solid #a0aab3;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
+
+.checkbox-label a {
+  color: #1e4f6b;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.checkbox-label a:hover {
+  border-bottom-color: #1e4f6b;
+}
+
+/* 注册按钮 */
+button[type="submit"] {
+  width: 100%;
+  min-height: 76px;
+  background-color: #1e4f6b;
+  color: #ffffff;
+  font-size: 30px;
+  font-weight: 700;
+  border: 4px solid #143a4b;
+  border-radius: 24px;
+  padding: 12px 20px;
+  margin-top: 24px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  touch-action: manipulation;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+button[type="submit"]:active {
+  background-color: #143a4b;
+  transform: scale(0.99);
+}
+
+button[type="submit"]:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  background-color: #5f6c7a;
+}
+
+/* 跳转登录链接 */
 .link {
   text-align: center;
-  margin-top: 1rem;
-  font-size: 1.4rem;
+  margin-top: 32px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.link a {
+  color: #1e4f6b;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  padding-bottom: 4px;
+  transition: border-color 0.15s;
+}
+
+.link a:hover {
+  border-bottom-color: #1e4f6b;
+}
+
+/* 移动端优化 */
+@media (max-width: 480px) {
+  .register-container {
+    padding: 20px 16px;
+  }
+  .title {
+    font-size: 32px;
+  }
+  .register-form {
+    padding: 28px 20px;
+  }
+  .form-group label {
+    font-size: 22px;
+  }
+  .form-group input {
+    font-size: 22px;
+    padding: 18px 16px;
+  }
+  .error {
+    font-size: 18px;
+  }
+  .checkbox-label {
+    font-size: 20px;
+    gap: 12px;
+  }
+  .checkbox-label input[type="checkbox"] {
+    width: 28px;
+    height: 28px;
+  }
+  button[type="submit"] {
+    font-size: 28px;
+    min-height: 80px;
+  }
+  .link {
+    font-size: 22px;
+  }
 }
 </style>
