@@ -70,6 +70,14 @@ import {
   updateLocationCacheSilently,
   getCachedLocation,
 } from '@/utils/location';
+import api from '@/api';     // 新增：引入 api 实例
+/**
+ * 链接老人端紧急呼叫与子女端紧急呼救联系人列表功能修改：
+ * 新增 emergencyPhone 响应式变量，存储要拨打的号码。
+ * 新增 fetchEmergencyContact 方法，从后端获取联系人列表并提取第一个电话。
+ * 在 onMounted 中调用该方法，并定期刷新（例如每 30 分钟）。
+ * 修改 executeEmergency 中的拨号语句，使用缓存的号码。
+ */
 
 const router = useRouter();
 
@@ -78,6 +86,7 @@ const isShaking = ref(false);
 const countdown = ref(0);
 const statusText = ref('');
 const showCancelBtn = ref(false);
+const emergencyPhone = ref('');             // 新增：缓存的紧急联系电话
 
 let countdownTimer = null;
 let beepTimer = null;
@@ -85,7 +94,7 @@ let beepAudio = null;
 
 // 配置常量
 const COUNTDOWN_SECONDS = 3;
-const EMERGENCY_PHONE = '19707092146';   // 预设紧急号码
+const EMERGENCY_PHONE = '19707092146';   // 预设紧急号码：系统管理员联系方式
 const MAX_RETRY = 2;                     // 后台发送重试次数（仅用于 fetch）
 
 // ---------- 语音播报（适老化）----------
@@ -109,6 +118,34 @@ const getElderName = () => {
     }
   } catch (e) {}
   return '老人';
+};
+
+// 从后端获取紧急联系人电话，并进行预缓存：确保可以在紧急情况下快速拨号
+const fetchEmergencyContact = async () => {
+  try {
+    const contacts = await api.get('/contacts');   // 自动带 token，返回联系人数组
+    console.log("111111111111111",contacts);
+    
+    if (contacts && contacts.length > 0) {
+      // 取第一个有电话号码的联系人
+      const firstContact = contacts[0];
+      if (firstContact.phone) {
+        emergencyPhone.value = firstContact.phone;
+        console.log('[Emergency] 已缓存联系人电话:', emergencyPhone.value);
+      } else {
+        console.warn('[Emergency] 联系人无电话，使用默认号码');
+        emergencyPhone.value = DEFAULT_EMERGENCY_PHONE;
+      }
+    } else {
+      console.warn('[Emergency] 无紧急联系人，使用默认号码');
+      emergencyPhone.value = DEFAULT_EMERGENCY_PHONE;
+      statusText.value = '尚未设置紧急联系人，请子女代为添加';
+      speakText('尚未设置紧急联系人，现在拨打管理员电话');
+    }
+  } catch (error) {
+    console.error('[Emergency] 获取联系人失败', error);
+    emergencyPhone.value = DEFAULT_EMERGENCY_PHONE;
+  }
 };
 
 
@@ -165,7 +202,7 @@ const sendEmergencyToBackend = (locationData) => {
     'Content-Type': 'application/json',
   };
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;  // 根据后端实际要求调整格式（可能为 'token' 值）
+    headers['Authorization'] = `Bearer ${token}`; // 确保 token 格式正确，后端确定这个格式
   }
 
   // 发送邮件请求
@@ -189,8 +226,11 @@ const sendEmergencyToBackend = (locationData) => {
 const executeEmergency = () => {
   // 1. 立即清理 UI 状态（隐藏取消按钮、停止抖动、清零倒计时）
   clearEmergencyUI();
-  // 2. 同步拨号（Safari 允许）
-  window.location.href = `tel:${EMERGENCY_PHONE}`;
+  // 2. 同步拨号（Safari 兼容）
+  // 使用缓存的电话号码（若未获取到则用默认值）
+  const phoneToDial = emergencyPhone.value || DEFAULT_EMERGENCY_PHONE;
+  window.location.href = `tel:${phoneToDial}`;
+  console.log('拨号:', phoneToDial)
 
   // 3. 读取缓存位置
   const cached = getCachedLocation();
@@ -275,13 +315,19 @@ const clearTimers = () => {
 
 // ---------- 位置预缓存逻辑 ----------
 let locationUpdateInterval = null;
+let contactUpdateInterval = null;   // 新增：定时刷新联系人号码
 
 onMounted(async () => {
-  // 1. 进入页面立即静默获取位置并缓存
+  // 1. 进入页面立即静默获取位置并缓存，预缓存紧急联系人电话
   await updateLocationCacheSilently();
+  await fetchEmergencyContact();
   // 2. 每 30 分钟更新一次缓存
   locationUpdateInterval = setInterval(() => {
     updateLocationCacheSilently();
+  }, 30 * 60 * 1000);
+  // 每 30 分钟刷新一次联系人信息（防止号码变更）
+  contactUpdateInterval = setInterval(() => {
+    fetchEmergencyContact();
   }, 30 * 60 * 1000);
 });
 
@@ -296,6 +342,10 @@ onUnmounted(() => {
   if (locationUpdateInterval) {
     clearInterval(locationUpdateInterval);
     locationUpdateInterval = null;
+  }
+  if (contactUpdateInterval) {
+    clearInterval(contactUpdateInterval);
+    contactUpdateInterval = null;
   }
 });
 

@@ -39,7 +39,7 @@
 
       <!-- 邮箱 -->
       <div class="form-group">
-        <label>邮箱</label>
+        <label>邮箱(可选)</label>
         <input v-model="form.email" @blur="validateEmail" />
         <span class="error" v-if="errors.email">{{ errors.email }}</span>
       </div>
